@@ -1,0 +1,129 @@
+# Firebase Rules - Critical Guidelines
+
+## 🚨 CRITICAL: Never Send `undefined` to Firebase
+
+### ❌ WRONG - Will Cause Firebase Errors
+```typescript
+const data = {
+  name: "John",
+  age: undefined,  // ❌ Firebase will reject this
+  email: undefined // ❌ Firebase will reject this
+};
+await addDoc(collection(db, 'users'), data); // ❌ ERROR!
+```
+
+### ✅ CORRECT - Use `null` or omit the field
+```typescript
+const data = {
+  name: "John",
+  age: null,  // ✅ Firebase accepts null
+  // email: omitted - ✅ Firebase accepts omitted fields
+};
+await addDoc(collection(db, 'users'), data); // ✅ SUCCESS!
+```
+
+## Firebase Data Types Rules
+
+### 1. **Never use `undefined`**
+- Firebase Firestore does NOT accept `undefined` values
+- Use `null` instead for empty/nullable fields
+- Omit the field entirely if it's optional and empty
+
+### 2. **Acceptable Firebase Values**
+- ✅ `null` - for empty/nullable fields
+- ✅ `string`, `number`, `boolean` - primitive types
+- ✅ `Date` objects - automatically converted to Timestamp
+- ✅ `Array` - for arrays of data
+- ✅ `Object` - for nested objects
+- ✅ Omitted fields - Firebase ignores undefined fields
+
+### 3. **Common Patterns**
+
+#### For Optional Fields
+```typescript
+// ✅ Good
+const userData = {
+  name: "John",
+  phone: user.phone || null,  // Use null, not undefined
+  address: user.address || null
+};
+
+// ✅ Better - Omit empty fields
+const userData = {
+  name: "John",
+  ...(user.phone && { phone: user.phone }),
+  ...(user.address && { address: user.address })
+};
+```
+
+#### For Form Data
+```typescript
+// ✅ Good
+const formData = {
+  name: form.name,
+  email: form.email,
+  phone: form.phone || null,  // Convert undefined to null
+  address: form.address || null
+};
+```
+
+#### For Update Operations
+```typescript
+// ✅ Good - Only send fields that have values
+const updateData = {
+  name: "Updated Name",
+  ...(phone && { phone }),  // Only include if has value
+  ...(address && { address })
+};
+```
+
+## Error Prevention Checklist
+
+Before sending data to Firebase, always check:
+
+- [ ] No `undefined` values in the data object
+- [ ] Use `null` for empty optional fields
+- [ ] Omit fields that are truly optional and empty
+- [ ] Test with console.log before sending to Firebase
+- [ ] Handle edge cases where data might be undefined
+
+## Common Firebase Errors to Avoid
+
+1. **"Value for argument 'data' is not a valid Firestore document"**
+   - Usually caused by `undefined` values
+   - Solution: Convert to `null` or omit
+
+2. **"Cannot serialize undefined"**
+   - Firebase cannot serialize `undefined`
+   - Solution: Use `null` or omit the field
+
+3. **"Invalid data type"**
+   - Check for `undefined` in nested objects
+   - Solution: Recursively clean the data
+
+## Utility Functions
+
+```typescript
+// Clean data before sending to Firebase
+const cleanForFirebase = (obj: any): any => {
+  if (obj === undefined) return null;
+  if (obj === null) return null;
+  if (Array.isArray(obj)) return obj.map(cleanForFirebase);
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = cleanForFirebase(value);
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+};
+
+// Usage
+const cleanData = cleanForFirebase(formData);
+await addDoc(collection(db, 'collection'), cleanData);
+```
+
+## Remember: Firebase = No `undefined` Ever! 🚫

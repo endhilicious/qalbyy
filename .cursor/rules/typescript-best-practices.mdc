@@ -1,0 +1,259 @@
+# TypeScript Best Practices
+
+## 🎯 CRITICAL: Type Safety First
+
+**ALWAYS** use proper TypeScript types and interfaces. Use `any` only when absolutely necessary and unavoidable.
+
+### Type Definitions
+
+```tsx
+// ✅ CORRECT - Proper interface definition
+interface User {
+  id: string
+  name: string
+  email: string
+  role: 'admin' | 'user' | 'moderator'
+  createdAt: Date
+  isActive: boolean
+}
+
+// ✅ CORRECT - Generic component with proper typing
+interface DataTableProps<T> {
+  data: T[]
+  columns: DataTableColumn<T>[]
+  filters?: DataTableFilter[]
+  searchPlaceholder?: string
+  searchKeys?: (keyof T)[]
+  actions?: (item: T) => React.ReactNode
+}
+
+// ✅ CORRECT - Using 'any' when necessary (e.g., for dynamic data, third-party APIs)
+const handleDynamicData = (data: any) => {
+  // Use 'any' only when dealing with truly dynamic/untyped data
+  // Examples: API responses without known structure, third-party library data
+  console.log('Dynamic data:', data)
+}
+
+// ❌ WRONG - Using any unnecessarily when types are known
+const handleUserData = (data: any) => {
+  // This should use User interface instead
+  console.log(data.name) // No type safety
+}
+```
+
+### Props Interface
+
+```tsx
+// ✅ CORRECT - Proper props interface
+interface ButtonProps {
+  children: React.ReactNode
+  variant?: 'primary' | 'secondary' | 'danger'
+  size?: 'sm' | 'md' | 'lg'
+  disabled?: boolean
+  onClick?: () => void
+  className?: string
+}
+
+// ✅ CORRECT - Component with proper typing
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  onClick,
+  className = ''
+}) => {
+  // Implementation
+}
+```
+
+### API Response Types
+
+```tsx
+// ✅ CORRECT - API response types
+interface ApiResponse<T> {
+  data: T
+  message: string
+  success: boolean
+  timestamp: string
+}
+
+interface UserListResponse extends ApiResponse<User[]> {
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+// ✅ CORRECT - API function with proper typing
+const fetchUsers = async (page: number, limit: number): Promise<UserListResponse> => {
+  const response = await fetch(`/api/users?page=${page}&limit=${limit}`)
+  return response.json()
+}
+```
+
+### Event Handlers
+
+```tsx
+// ✅ CORRECT - Proper event typing
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value
+  setName(value)
+}
+
+const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault()
+  // Handle form submission
+}
+
+const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  e.preventDefault()
+  // Handle button click
+}
+```
+
+### Custom Hooks
+
+```tsx
+// ✅ CORRECT - Custom hook with proper typing
+interface UseApiOptions<T> {
+  url: string
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  body?: T
+  headers?: Record<string, string>
+}
+
+interface UseApiReturn<T> {
+  data: T | null
+  loading: boolean
+  error: string | null
+  execute: () => Promise<void>
+}
+
+const useApi = <T, U = void>(options: UseApiOptions<U>): UseApiReturn<T> => {
+  // Implementation
+}
+```
+
+### When to Use `any`
+
+```tsx
+// ✅ CORRECT - Use 'any' only in these specific cases:
+
+// 1. Third-party library data without types
+const thirdPartyData: any = thirdPartyLibrary.getData()
+
+// 2. Dynamic API responses with unknown structure
+const dynamicResponse: any = await fetch('/api/dynamic-endpoint').then(r => r.json())
+
+// 3. Generic utility functions that need to handle unknown types
+const deepClone = <T>(obj: T): T => {
+  return JSON.parse(JSON.stringify(obj)) as T
+}
+
+// 4. Firebase document data with dynamic fields
+interface FirebaseDocument {
+  id: string
+  [key: string]: any // Dynamic fields from Firestore
+}
+
+// 5. Event handlers for unknown event types
+const handleUnknownEvent = (event: any) => {
+  // Handle events from third-party libraries
+  console.log('Unknown event:', event)
+}
+```
+
+### What NOT to Do
+
+❌ **Don't use `any` when types are known or can be inferred**
+❌ **Don't ignore TypeScript errors**
+❌ **Don't use type assertions without validation**
+❌ **Don't create untyped functions when types are available**
+❌ **Don't use `Object` or `Function` types**
+
+### What TO Do
+
+✅ **Always define proper interfaces when possible**
+✅ **Use union types for limited values**
+✅ **Implement proper error handling**
+✅ **Use generic types when appropriate**
+✅ **Add JSDoc comments for complex types**
+✅ **Validate data at runtime when needed**
+✅ **Use 'any' only when absolutely necessary**
+
+### Type Guards
+
+```tsx
+// ✅ CORRECT - Type guard functions
+const isUser = (obj: unknown): obj is User => {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj &&
+    'name' in obj &&
+    'email' in obj
+  )
+}
+
+// ✅ CORRECT - Using type guards
+const processUser = (data: unknown) => {
+  if (isUser(data)) {
+    // TypeScript knows data is User here
+    console.log(data.name)
+  }
+}
+```
+
+### Error Handling
+
+```tsx
+// ✅ CORRECT - Proper error handling with types
+class ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public code?: string
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+const handleApiCall = async <T>(url: string): Promise<T> => {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new ApiError(`HTTP ${response.status}`, response.status)
+    }
+    return response.json()
+  } catch (error) {
+    if (error instanceof ApiError) {
+      // Handle API errors
+      console.error(`API Error: ${error.statusCode}`)
+    }
+    throw error
+  }
+}
+```
+
+### Best Practices Summary
+
+1. **Use proper types whenever possible**
+2. **Use 'any' only when dealing with truly dynamic/untyped data**
+3. **Always validate data at runtime when using 'any'**
+4. **Document why 'any' is necessary in comments**
+5. **Consider using `unknown` instead of `any` for better type safety**
+6. **Use type guards to narrow down 'any' types**
+
+**⚠️ FAILURE TO FOLLOW THESE RULES WILL RESULT IN:**
+- Runtime errors and crashes
+- Poor code maintainability
+- Type safety issues
+- Code review rejection
+description:
+globs:
+alwaysApply: false
+---

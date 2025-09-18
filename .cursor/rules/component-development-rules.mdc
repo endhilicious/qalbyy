@@ -1,0 +1,299 @@
+# Component Development Rules
+
+## 🎯 CRITICAL: Component Structure dan Organization
+
+### Reusable Component Folder Structure
+**WAJIB DILAKUKAN:** Setiap component yang berpotensi reusable, **HARUS** dibuat dengan struktur folder lengkap:
+
+```
+/NamaComponent
+├── NamaComponent.tsx    # Component utama
+├── index.ts            # Export file
+├── dataMock.ts         # Mock data (jika diperlukan)
+└── README.md           # Documentation lengkap
+```
+
+### Component Documentation Requirements
+**README.md harus berisi:**
+- Deskripsi component dan kegunaannya
+- Props interface dengan contoh penggunaan
+- Contoh implementasi (usage examples)
+- Dependencies dan requirements
+- Notes penting untuk developer
+
+### Component Export Pattern
+```tsx
+// ✅ CORRECT - index.ts export pattern
+export { default as NamaComponent } from './NamaComponent'
+export type { NamaComponentProps } from './NamaComponent'
+
+// ✅ CORRECT - Component dengan proper typing
+interface NamaComponentProps {
+  title: string
+  description?: string
+  onAction?: () => void
+  variant?: 'primary' | 'secondary'
+  disabled?: boolean
+  className?: string
+}
+
+export const NamaComponent: React.FC<NamaComponentProps> = ({
+  title,
+  description,
+  onAction,
+  variant = 'primary',
+  disabled = false,
+  className = ''
+}) => {
+  // Implementation
+}
+```
+
+## Component Design Principles
+
+### 1. Single Responsibility
+- Setiap component **HANYA** punya satu tanggung jawab
+- Jika component terlalu kompleks, breakdown menjadi sub-components
+- Gunakan composition pattern untuk flexibility
+
+### 2. Props Interface Design
+```tsx
+// ✅ CORRECT - Props dengan default values dan optional
+interface ButtonProps {
+  children: React.ReactNode
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  size?: 'sm' | 'md' | 'lg'
+  disabled?: boolean
+  loading?: boolean
+  onClick?: () => void
+  className?: string
+  type?: 'button' | 'submit' | 'reset'
+}
+
+// ✅ CORRECT - Component dengan proper default handling
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  loading = false,
+  onClick,
+  className = '',
+  type = 'button'
+}) => {
+  // Implementation
+}
+```
+
+### 3. Component Composition
+```tsx
+// ✅ CORRECT - Composition pattern untuk flexibility
+interface CardProps {
+  children: React.ReactNode
+  className?: string
+}
+
+interface CardHeaderProps {
+  children: React.ReactNode
+  className?: string
+}
+
+interface CardBodyProps {
+  children: React.ReactNode
+  className?: string
+}
+
+export const Card: React.FC<CardProps> & {
+  Header: React.FC<CardHeaderProps>
+  Body: React.FC<CardBodyProps>
+} = ({ children, className = '' }) => (
+  <div className={`bg-white rounded-lg shadow ${className}`}>
+    {children}
+  </div>
+)
+
+Card.Header = ({ children, className = '' }) => (
+  <div className={`px-6 py-4 border-b border-gray-200 ${className}`}>
+    {children}
+  </div>
+)
+
+Card.Body = ({ children, className = '' }) => (
+  <div className={`px-6 py-4 ${className}`}>
+    {children}
+  </div>
+)
+```
+
+## Component Testing Requirements
+
+### Test File Structure
+```tsx
+// ✅ CORRECT - Test file naming dan structure
+// Component: src/components/Button/Button.tsx
+// Test: src/components/Button/Button.test.tsx
+
+describe('Button', () => {
+  const defaultProps = {
+    children: 'Click me',
+    onClick: jest.fn()
+  }
+
+  it('renders with correct text', () => {
+    render(<Button {...defaultProps} />)
+    expect(screen.getByText('Click me')).toBeInTheDocument()
+  })
+
+  it('applies variant classes correctly', () => {
+    render(<Button {...defaultProps} variant="danger" />)
+    const button = screen.getByRole('button')
+    expect(button).toHaveClass('bg-red-600')
+  })
+})
+```
+
+## Component Styling Guidelines
+
+### Tailwind CSS Usage
+- **Mobile-First:** Mulai dari mobile, kemudian scale up
+- **Consistent Spacing:** Gunakan spacing scale yang konsisten (4, 6, 8, 12, 16, 20, 24, 32, 48, 64)
+- **Responsive Design:** Implementasikan responsive breakpoints dengan proper
+- **Color Consistency:** Gunakan color palette yang sudah didefinisikan
+
+### Style Organization
+```tsx
+// ✅ CORRECT - Style organization dengan logical grouping
+const getVariantClasses = (variant: ButtonVariant) => {
+  const baseClasses = 'px-4 py-2 rounded-md font-medium transition-colors'
+  
+  switch (variant) {
+    case 'primary':
+      return `${baseClasses} bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500`
+    case 'secondary':
+      return `${baseClasses} bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-2 focus:ring-gray-500`
+    case 'danger':
+      return `${baseClasses} bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-500`
+    default:
+      return baseClasses
+  }
+}
+```
+
+## Component State Management
+
+### Local State Pattern
+```tsx
+// ✅ CORRECT - Local state dengan proper typing
+const [isOpen, setIsOpen] = useState(false)
+const [selectedValue, setSelectedValue] = useState<string | null>(null)
+const [loading, setLoading] = useState(false)
+
+// ✅ CORRECT - State update dengan proper validation
+const handleValueChange = (value: string) => {
+  if (value && value.trim()) {
+    setSelectedValue(value.trim())
+  }
+}
+```
+
+### Custom Hooks Integration
+```tsx
+// ✅ CORRECT - Component menggunakan custom hooks
+export const UserList = () => {
+  const { users, loading, error, fetchUsers } = useUsers()
+  const { deleteUser } = useUserActions()
+
+  if (loading) return <LoadingSpinner />
+  if (error) return <ErrorMessage message={error} onRetry={fetchUsers} />
+
+  return (
+    <div className="space-y-4">
+      {users.map(user => (
+        <UserCard 
+          key={user.id} 
+          user={user} 
+          onDelete={() => deleteUser(user.id)}
+        />
+      ))}
+    </div>
+  )
+}
+```
+
+## Component Accessibility
+
+### ARIA Labels dan Roles
+```tsx
+// ✅ CORRECT - Proper accessibility implementation
+<button
+  aria-label="Close modal"
+  aria-expanded={isOpen}
+  onClick={handleClose}
+  className="..."
+>
+  <XIcon className="h-5 w-5" />
+</button>
+
+// ✅ CORRECT - Form accessibility
+<label htmlFor="email" className="block text-sm font-medium text-gray-700">
+  Email Address
+</label>
+<input
+  id="email"
+  type="email"
+  aria-describedby="email-help"
+  className="..."
+/>
+<p id="email-help" className="text-sm text-gray-500">
+  We'll never share your email with anyone else.
+</p>
+```
+
+## Component Performance
+
+### Memoization Strategy
+```tsx
+// ✅ CORRECT - Memoization untuk expensive operations
+const expensiveValue = useMemo(() => {
+  return heavyCalculation(data)
+}, [data])
+
+// ✅ CORRECT - Callback memoization
+const handleClick = useCallback(() => {
+  onAction(id)
+}, [onAction, id])
+
+// ✅ CORRECT - Component memoization
+export const ExpensiveComponent = React.memo<ExpensiveComponentProps>(({ data }) => {
+  // Implementation
+})
+```
+
+## What NOT to Do
+
+❌ **Don't create components without proper folder structure**
+❌ **Don't skip documentation in README.md**
+❌ **Don't use inline styles instead of Tailwind classes**
+❌ **Don't create components that are too specific to one use case**
+❌ **Don't forget to handle loading and error states**
+❌ **Don't ignore accessibility requirements**
+
+## What TO Do
+
+✅ **Always create proper folder structure for reusable components**
+✅ **Write comprehensive documentation in README.md**
+✅ **Use TypeScript interfaces for all props**
+✅ **Implement proper error handling and loading states**
+✅ **Follow mobile-first responsive design**
+✅ **Test all component variations**
+✅ **Use consistent styling patterns**
+
+**⚠️ FAILURE TO FOLLOW THESE RULES WILL RESULT IN:**
+- Poor component organization
+- Difficult maintenance
+- Inconsistent user experience
+- Code review rejection
+description:
+globs:
+alwaysApply: false
+---

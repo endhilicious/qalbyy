@@ -1,0 +1,480 @@
+# Reusable Breadcrumbs Component Rules
+
+## IMPORTANT: Breadcrumbs Component Usage
+
+**APPLY ONLY WHEN:**
+- Creating new pages after root level
+- Working with nested routes (e.g., /admin/users/1, /dashboard/settings/profile)
+- Building navigation components
+- Mentioning "breadcrumbs", "navigation", "back button", or "page navigation"
+
+**DO NOT APPLY WHEN:**
+- Working with root level pages (e.g., /admin, /dashboard, /home)
+- Creating landing pages or public pages
+- Building single-page applications without routing
+
+When working with nested pages that require navigation context, **ALWAYS** use the `Breadcrumbs` component to provide clear navigation hierarchy and back functionality.
+
+### Mandatory Breadcrumbs Component
+
+**Use this component for ALL nested pages:**
+
+**IMPORTANT: Adjust import path based on your project structure:**
+
+```tsx
+// Option 1: If using path alias (most common)
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+
+// Option 2: If using relative imports
+import { Breadcrumbs } from './components/ui/Breadcrumbs'
+import { Breadcrumbs } from '../components/ui/Breadcrumbs'
+
+// Option 3: If using absolute imports from src
+import { Breadcrumbs } from 'src/components/ui/Breadcrumbs'
+```
+
+### Why Use Breadcrumbs?
+
+1. **Navigation Context**: Shows users where they are in the application hierarchy
+2. **Back Functionality**: Provides easy navigation to parent pages
+3. **Auto-Generated**: Automatically creates breadcrumbs from current path
+4. **Consistent UX**: Uniform navigation experience across all pages
+5. **Mobile-Friendly**: Responsive design that works on all screen sizes
+6. **Accessibility**: Proper ARIA labels and keyboard navigation
+
+### Core Interfaces
+
+```tsx
+// Breadcrumb Item Interface
+interface BreadcrumbItem {
+  label: string;
+  href: string;
+  isActive?: boolean;
+  isClickable?: boolean;
+}
+
+// Breadcrumbs Props Interface
+interface BreadcrumbsProps {
+  className?: string;
+  showBackButton?: boolean;
+  backButtonText?: string;
+  separator?: React.ReactNode;
+  maxItems?: number;
+  rootPath?: string;
+  customItems?: BreadcrumbItem[];
+}
+```
+
+### Implementation Pattern
+
+```tsx
+// Basic Usage - Auto-generate from path
+<Breadcrumbs />
+
+// With Custom Styling
+<Breadcrumbs className="mb-6" />
+
+// With Custom Back Button Text
+<Breadcrumbs 
+  backButtonText="Back to Dashboard"
+  className="mb-4"
+/>
+
+// With Custom Root Path
+<Breadcrumbs 
+  rootPath="/admin"
+  className="mb-6"
+/>
+
+// With Custom Items (override auto-generation)
+<Breadcrumbs 
+  customItems={[
+    { label: 'Dashboard', href: '/admin', isClickable: true },
+    { label: 'Users', href: '/admin/users', isClickable: true },
+    { label: 'User Details', href: '/admin/users/1', isActive: true }
+  ]}
+/>
+```
+
+### Component Architecture
+
+```
+Breadcrumbs Component
+├── Back Button (Optional)
+│   ├── Arrow Icon (Lucide React)
+│   └── Back Text
+├── Breadcrumb Items
+│   ├── Root Item (Clickable)
+│   ├── Intermediate Items (Clickable)
+│   └── Current Item (Active, Non-clickable)
+└── Separator (Between items)
+```
+
+### Auto-Generation Logic
+
+The component automatically generates breadcrumbs from the current path:
+
+```tsx
+// Example: /admin/users/1
+// Generates:
+// [
+//   { label: 'Admin', href: '/admin', isClickable: true },
+//   { label: 'Users', href: '/admin/users', isClickable: true },
+//   { label: '1', href: '/admin/users/1', isActive: true, isClickable: false }
+// ]
+
+// Example: /dashboard/settings/profile
+// Generates:
+// [
+//   { label: 'Dashboard', href: '/dashboard', isClickable: true },
+//   { label: 'Settings', href: '/dashboard/settings', isClickable: true },
+//   { label: 'Profile', href: '/dashboard/settings/profile', isActive: true, isClickable: false }
+// ]
+```
+
+### Page Layout Structure
+
+```tsx
+// Correct Page Structure
+<div className="min-h-screen bg-gray-50">
+  {/* Header - Always at top */}
+  <Header />
+  
+  {/* Breadcrumbs - Right after header */}
+  <Breadcrumbs className="px-4 py-3 bg-white border-b" />
+  
+  {/* Main Content */}
+  <main className="p-6">
+    <div className="max-w-7xl mx-auto">
+      {/* Your page content */}
+    </div>
+  </main>
+</div>
+```
+
+### Styling Guidelines
+
+#### 1. Default Styling
+```tsx
+// Default breadcrumbs styling
+<div className="flex items-center space-x-2 text-sm text-gray-600">
+  <button className="flex items-center space-x-1 hover:text-gray-900">
+    <ArrowLeft className="h-4 w-4" />
+    <span>Back</span>
+  </button>
+  <span className="text-gray-400">/</span>
+  <a href="/admin" className="hover:text-gray-900">Admin</a>
+  <span className="text-gray-400">/</span>
+  <a href="/admin/users" className="hover:text-gray-900">Users</a>
+  <span className="text-gray-400">/</span>
+  <span className="text-gray-900 font-medium">1</span>
+</div>
+```
+
+#### 2. Custom Styling
+```tsx
+<Breadcrumbs 
+  className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200"
+  separator={<ChevronRight className="h-4 w-4 text-blue-400" />}
+/>
+```
+
+### Configuration Options
+
+#### 1. Basic Configuration
+```tsx
+<Breadcrumbs 
+  showBackButton={true}
+  backButtonText="Back to Dashboard"
+  className="mb-6"
+/>
+```
+
+#### 2. Advanced Configuration
+```tsx
+<Breadcrumbs 
+  showBackButton={true}
+  backButtonText="Back to Admin"
+  separator={<ChevronRight className="h-4 w-4" />}
+  maxItems={5}
+  rootPath="/admin"
+  className="mb-4 px-4 py-2 bg-gray-50 rounded-lg"
+/>
+```
+
+#### 3. Custom Items Override
+```tsx
+<Breadcrumbs 
+  customItems={[
+    { 
+      label: 'Dashboard', 
+      href: '/admin', 
+      isClickable: true 
+    },
+    { 
+      label: 'User Management', 
+      href: '/admin/users', 
+      isClickable: true 
+    },
+    { 
+      label: 'Budi Santoso', 
+      href: '/admin/users/1', 
+      isActive: true,
+      isClickable: false 
+    }
+  ]}
+/>
+```
+
+### Responsive Design
+
+#### Desktop View
+```tsx
+// Full breadcrumbs with all items
+< Admin / Users / 1
+```
+
+#### Mobile View
+```tsx
+// Condensed breadcrumbs with back button
+< Back / Users / 1
+```
+
+### What NOT to Do
+
+❌ **Don't create custom navigation components**
+❌ **Don't hardcode breadcrumb items**
+❌ **Don't skip breadcrumbs on nested pages**
+❌ **Don't put breadcrumbs inside main content**
+❌ **Don't use breadcrumbs on root pages**
+❌ **Don't create separate back buttons**
+
+### What TO Do
+
+✅ **Always use Breadcrumbs component on nested pages**
+✅ **Place breadcrumbs right after header**
+✅ **Let component auto-generate from path**
+✅ **Use custom items only when necessary**
+✅ **Provide proper back functionality**
+✅ **Ensure responsive design**
+✅ **Test navigation flow**
+
+### File Locations
+
+- **Component**: `src/components/ui/Breadcrumbs.tsx`
+- **Types**: Exported from `Breadcrumbs.tsx`
+- **Dependencies**: `lucide-react` for icons, `next/router` or `react-router-dom` for navigation
+
+### Implementation Examples
+
+#### 1. User Detail Page
+```tsx
+// /admin/users/[id]/page.tsx
+export default function UserDetailPage({ params }: { params: { id: string } }) {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <Breadcrumbs className="px-4 py-3 bg-white border-b" />
+      
+      <main className="p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h1 className="text-2xl font-bold">User Details</h1>
+            {/* User content */}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+```
+
+#### 2. Settings Page
+```tsx
+// /dashboard/settings/page.tsx
+export default function SettingsPage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <Breadcrumbs className="px-4 py-3 bg-white border-b" />
+      
+      <main className="p-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl font-bold mb-6">Settings</h1>
+          {/* Settings content */}
+        </div>
+      </main>
+    </div>
+  );
+}
+```
+
+#### 3. Nested Settings Page
+```tsx
+// /dashboard/settings/profile/page.tsx
+export default function ProfileSettingsPage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <Breadcrumbs className="px-4 py-3 bg-white border-b" />
+      
+      <main className="p-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl font-bold mb-6">Profile Settings</h1>
+          {/* Profile settings content */}
+        </div>
+      </main>
+    </div>
+  );
+}
+```
+
+### Advanced Usage
+
+#### 1. Custom Root Path
+```tsx
+// For applications with custom root
+<Breadcrumbs 
+  rootPath="/app"
+  className="mb-6"
+/>
+// Path: /app/dashboard/users/1
+// Generates: App / Dashboard / Users / 1
+```
+
+#### 2. Maximum Items with Overflow
+```tsx
+<Breadcrumbs 
+  maxItems={3}
+  className="mb-6"
+/>
+// Long path: /admin/users/1/profile/settings/security
+// Shows: < Back / ... / Settings / Security
+```
+
+#### 3. Custom Separator
+```tsx
+<Breadcrumbs 
+  separator={<ChevronRight className="h-4 w-4 text-gray-400" />}
+  className="mb-6"
+/>
+```
+
+### Troubleshooting Common Issues
+
+#### 1. Breadcrumbs Not Showing
+```tsx
+// ❌ Wrong - missing breadcrumbs on nested page
+export default function UserPage() {
+  return (
+    <div>
+      <Header />
+      <main>
+        {/* Missing breadcrumbs */}
+      </main>
+    </div>
+  );
+}
+
+// ✅ Correct - breadcrumbs included
+export default function UserPage() {
+  return (
+    <div>
+      <Header />
+      <Breadcrumbs className="px-4 py-3 bg-white border-b" />
+      <main>
+        {/* Content */}
+      </main>
+    </div>
+  );
+}
+```
+
+#### 2. Wrong Path Generation
+```tsx
+// ❌ Wrong - hardcoded items
+<Breadcrumbs 
+  customItems={[
+    { label: 'Admin', href: '/admin' },
+    { label: 'Users', href: '/admin/users' },
+    { label: 'User 1', href: '/admin/users/1' }
+  ]}
+/>
+
+// ✅ Correct - let component auto-generate
+<Breadcrumbs />
+```
+
+#### 3. Missing Back Button
+```tsx
+// ❌ Wrong - back button disabled
+<Breadcrumbs showBackButton={false} />
+
+// ✅ Correct - back button enabled
+<Breadcrumbs showBackButton={true} />
+```
+
+### Performance Considerations
+
+1. **Memoize Breadcrumb Items**: Use `useMemo` for complex path processing
+2. **Lazy Load**: Only generate breadcrumbs when component mounts
+3. **Path Caching**: Cache processed paths to avoid recalculation
+4. **Minimal Re-renders**: Use `React.memo` for breadcrumb items
+
+### Accessibility
+
+The Breadcrumbs component includes:
+- Proper ARIA labels and roles
+- Keyboard navigation support
+- Screen reader compatibility
+- Focus management for interactive elements
+- Semantic HTML structure
+
+### Migration from Custom Navigation
+
+If you encounter custom navigation implementations:
+
+1. **Replace with Breadcrumbs component**
+2. **Remove hardcoded navigation items**
+3. **Place breadcrumbs after header**
+4. **Test navigation flow**
+5. **Ensure responsive behavior**
+
+### Common Patterns
+
+#### 1. Admin Panel Pages
+```tsx
+// All admin pages after root
+<Breadcrumbs className="px-4 py-3 bg-white border-b" />
+```
+
+#### 2. Dashboard Nested Pages
+```tsx
+// All dashboard nested pages
+<Breadcrumbs 
+  rootPath="/dashboard"
+  className="px-4 py-3 bg-white border-b"
+/>
+```
+
+#### 3. E-commerce Product Pages
+```tsx
+// Product detail pages
+<Breadcrumbs 
+  customItems={[
+    { label: 'Home', href: '/', isClickable: true },
+    { label: 'Products', href: '/products', isClickable: true },
+    { label: 'Category', href: '/products/category', isClickable: true },
+    { label: 'Product Name', href: '/products/category/1', isActive: true }
+  ]}
+/>
+```
+
+**Remember**: This rule ensures consistent navigation experience across all nested pages. Always use Breadcrumbs for pages after root level.
+
+**⚠️ FAILURE TO FOLLOW THIS RULE WILL RESULT IN:**
+- Inconsistent navigation experience
+- Poor user experience
+- Confusion about page hierarchy
+- Code review rejection
+- Duplicate navigation implementations

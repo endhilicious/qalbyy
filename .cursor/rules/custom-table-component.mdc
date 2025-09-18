@@ -1,0 +1,995 @@
+# Custom Table Component Rules
+
+## IMPORTANT: Custom Table Component Usage
+
+**APPLY ONLY WHEN:**
+- Working with `CustomTable` component
+- Working with `ResponsiveTable` component  
+- Creating table implementations that need desktop table + mobile card views
+- Mentioning "table", "responsive table", "mobile table", or "card view"
+
+**DO NOT APPLY WHEN:**
+- Working with pure card-based components (like gallery or portfolio components)
+- Creating static card grids without table functionality
+- Working with gallery or portfolio layouts
+- Creating pure mobile-only card components
+
+When working with table implementations that require **desktop table view** and **mobile card view**, **ALWAYS** use the `CustomTable` component instead of creating custom table implementations or using other table libraries.
+
+### Mandatory Table Component
+
+**Use this component for ALL responsive table implementations:**
+
+**IMPORTANT: Adjust import path based on your project structure:**
+
+```tsx
+// Option 1: If using path alias (most common)
+import { CustomTable, TableConfig, TableColumn, TableAction } from '@/components/ui/CustomTable'
+
+// Option 2: If using relative imports
+import { CustomTable, TableConfig, TableColumn, TableAction } from './components/ui/CustomTable'
+import { CustomTable, TableConfig, TableColumn, TableAction } from '../components/ui/CustomTable'
+import { CustomTable, TableConfig, TableColumn, TableAction } from '../../components/ui/CustomTable'
+
+// Option 3: If using absolute imports from src
+import { CustomTable, TableConfig, TableColumn, TableAction } from 'src/components/ui/CustomTable'
+
+// Option 4: If component is in different location
+import { CustomTable, TableConfig, TableColumn, TableAction } from '@/ui/CustomTable'
+import { CustomTable, TableConfig, TableColumn, TableAction } from '@/shared/components/CustomTable'
+```
+
+**Check your project's tsconfig.json or next.config.js for path mapping configuration.**
+
+### How to Determine Correct Import Path
+
+#### 1. Check tsconfig.json
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],           // Use: @/components/ui/CustomTable
+      "~/*": ["./src/*"],           // Use: ~/components/ui/CustomTable
+      "components/*": ["./src/components/*"]  // Use: components/ui/CustomTable
+    }
+  }
+}
+```
+
+#### 2. Check next.config.js (Next.js projects)
+```javascript
+module.exports = {
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, 'src'),
+    }
+    return config
+  }
+}
+```
+
+#### 3. Check vite.config.js (Vite projects)
+```javascript
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+})
+```
+
+#### 4. Common Project Structures
+```
+project-root/
+├── src/
+│   └── components/
+│       └── ui/
+│           └── CustomTable.tsx
+├── components/
+│   └── ui/
+│       └── CustomTable.tsx
+├── lib/
+│   └── components/
+│       └── CustomTable.tsx
+└── packages/
+    └── ui/
+        └── CustomTable.tsx
+```
+
+**Use the import path that matches your project structure!**
+
+### Why Use CustomTable?
+
+1. **Responsive Design**: Automatically switches between table (desktop) and card (mobile) views
+2. **TypeScript Support**: Full type safety with generics
+3. **Flexible Configuration**: Customizable columns, actions, and styling
+4. **Consistent UX**: Uniform table behavior across all modules
+5. **Mobile-First**: Optimized card layout for mobile devices
+6. **Action Support**: Built-in action buttons with variants and conditions
+7. **Loading States**: Built-in loading and empty state handling
+
+### Core Interfaces
+
+```tsx
+// Table Column Interface
+interface TableColumn<T> {
+  key: keyof T | string;
+  label: string;
+  render?: (value: any, item: T, index: number) => React.ReactNode;
+  mobileRender?: (value: any, item: T, index: number) => React.ReactNode;
+  hideOnMobile?: boolean;
+  align?: 'left' | 'center' | 'right';
+  width?: string;
+}
+
+// Table Action Interface
+interface TableAction<T> {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  variant: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info';
+  onClick: (item: T) => void;
+  condition?: (item: T) => boolean;
+  title?: string;
+  className?: string;
+}
+
+// Table Config Interface
+interface TableConfig<T> {
+  columns: TableColumn<T>[];
+  actions?: TableAction<T>[];
+  showRowNumbers?: boolean;
+  responsive?: boolean;
+  loading?: boolean;
+  emptyState?: {
+    icon?: LucideIcon;
+    title?: string;
+    description?: string;
+  };
+  className?: string;
+  mobileActionsPosition?: 'bottom' | 'top-right';
+}
+```
+
+### Implementation Pattern
+
+```tsx
+// Define your data type
+interface YourDataType {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  createdAt: Date;
+}
+
+// Define table configuration
+const config: TableConfig<YourDataType> = {
+  columns: [
+    {
+      key: 'name',
+      label: 'Nama',
+      render: (value) => (
+        <span className="font-semibold text-gray-900">
+          {value || '-'}
+        </span>
+      ),
+      mobileRender: (value, item) => (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {value || 'N/A'}
+          </h3>
+          <p className="text-sm text-gray-600">{item.email || '-'}</p>
+        </div>
+      )
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      render: (value) => value || '-',
+      hideOnMobile: true
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (value) => (
+        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+          value === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {value === 'active' ? 'Aktif' : 'Tidak Aktif'}
+        </span>
+      ),
+      mobileRender: (value) => (
+        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+          value === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {value === 'active' ? 'Aktif' : 'Tidak Aktif'}
+        </span>
+      )
+    }
+  ],
+  actions: [
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: Edit,
+      variant: 'primary',
+      onClick: (item) => handleEdit(item),
+      condition: (item) => item.status === 'active'
+    },
+    {
+      key: 'delete',
+      label: 'Hapus',
+      icon: Trash2,
+      variant: 'danger',
+      onClick: (item) => handleDelete(item)
+    }
+  ],
+  showRowNumbers: true,
+  responsive: true,
+  mobileActionsPosition: 'top-right',
+  emptyState: {
+    icon: FileText,
+    title: 'Tidak ada data',
+    description: 'Belum ada data yang tersedia untuk ditampilkan.'
+  }
+};
+
+// Use the component
+<CustomTable 
+  data={yourData} 
+  config={config}
+  isLoading={loading}
+  className="mt-4"
+/>
+```
+
+### Column Configuration Best Practices
+
+#### 1. Basic Column
+```tsx
+{
+  key: 'fieldName',
+  label: 'Display Name',
+  render: (value) => value || '-'
+}
+```
+
+#### 2. Column with Custom Rendering
+```tsx
+{
+  key: 'status',
+  label: 'Status',
+  render: (value) => (
+    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+      value === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+    }`}>
+      {value === 'active' ? 'Aktif' : 'Tidak Aktif'}
+    </span>
+  )
+}
+```
+
+#### 3. Column with Mobile-Specific Rendering
+```tsx
+{
+  key: 'name',
+  label: 'Nama',
+  render: (value) => <span className="font-medium">{value}</span>,
+  mobileRender: (value, item) => (
+    <div>
+      <h3 className="text-lg font-semibold">{value}</h3>
+      <p className="text-sm text-gray-600">{item.email}</p>
+    </div>
+  )
+}
+```
+
+#### 4. Column Hidden on Mobile
+```tsx
+{
+  key: 'email',
+  label: 'Email',
+  render: (value) => value || '-',
+  hideOnMobile: true
+}
+```
+
+#### 5. Column with Alignment
+```tsx
+{
+  key: 'amount',
+  label: 'Jumlah',
+  align: 'right',
+  render: (value) => formatCurrency(value)
+}
+```
+
+### Action Configuration
+
+#### 1. Basic Action
+```tsx
+{
+  key: 'view',
+  label: 'Lihat',
+  icon: Eye,
+  variant: 'primary',
+  onClick: (item) => handleView(item)
+}
+```
+
+#### 2. Conditional Action
+```tsx
+{
+  key: 'edit',
+  label: 'Edit',
+  icon: Edit,
+  variant: 'secondary',
+  onClick: (item) => handleEdit(item),
+  condition: (item) => item.status === 'active'
+}
+```
+
+#### 3. Action with Custom Styling
+```tsx
+{
+  key: 'delete',
+  label: 'Hapus',
+  icon: Trash2,
+  variant: 'danger',
+  onClick: (item) => handleDelete(item),
+  className: 'hover:bg-red-50'
+}
+```
+
+### Mobile Layout Configuration
+
+#### 1. Actions at Top-Right (Default for most cases)
+```tsx
+const config: TableConfig<YourDataType> = {
+  // ... other config
+  mobileActionsPosition: 'top-right'
+};
+```
+
+#### 2. Actions at Bottom
+```tsx
+const config: TableConfig<YourDataType> = {
+  // ... other config
+  mobileActionsPosition: 'bottom'
+};
+```
+
+### Responsive Design Features
+
+1. **Desktop View**: Traditional table layout with horizontal scrolling
+2. **Mobile View**: Card-based layout with stacked information
+3. **Action Positioning**: Configurable action placement (top-right or bottom)
+4. **Column Hiding**: Ability to hide columns on mobile
+5. **Custom Mobile Rendering**: Special rendering for mobile cards
+
+### Loading and Empty States
+
+#### Loading State
+```tsx
+<CustomTable 
+  data={[]} 
+  config={config}
+  isLoading={true}
+/>
+```
+
+#### Empty State with Custom Message
+```tsx
+const config: TableConfig<YourDataType> = {
+  // ... other config
+  emptyState: {
+    icon: Search,
+    title: 'Tidak ada data ditemukan',
+    description: 'Coba sesuaikan kriteria pencarian atau filter Anda.'
+  }
+};
+```
+
+### Styling and Customization
+
+#### 1. Custom Table Styling
+```tsx
+<CustomTable 
+  data={data} 
+  config={config}
+  className="mt-6 border border-gray-200 rounded-lg"
+/>
+```
+
+#### 2. Custom Column Styling
+```tsx
+{
+  key: 'name',
+  label: 'Nama',
+  render: (value) => (
+    <span className="font-bold text-blue-600">
+      {value}
+    </span>
+  )
+}
+```
+
+### What NOT to Do
+
+❌ **Don't create custom table components**
+❌ **Don't use basic HTML tables for data display**
+❌ **Don't implement separate mobile/desktop components**
+❌ **Don't use other table libraries (react-table, etc.)**
+❌ **Don't hardcode responsive breakpoints**
+❌ **Don't create custom action dropdowns**
+
+### What TO Do
+
+✅ **Always use CustomTable component**
+✅ **Define proper TypeScript interfaces for your data**
+✅ **Use mobileRender for mobile-specific layouts**
+✅ **Implement proper action conditions**
+✅ **Use hideOnMobile for non-essential columns**
+✅ **Configure mobileActionsPosition appropriately**
+✅ **Provide meaningful empty states**
+✅ **Use proper action variants for visual hierarchy**
+
+### File Locations
+
+- **Component**: `src/components/ui/CustomTable.tsx`
+- **Types**: Exported from `CustomTable.tsx`
+- **Dependencies**: `lucide-react` for icons
+- **Related Components**: Any component that uses CustomTable internally
+
+### Component Architecture
+
+```
+CustomTable (Generic Component)
+├── DesktopTable (Internal)
+│   ├── Table Headers
+│   ├── Table Rows
+│   └── Action Buttons
+└── MobileCards (Internal)
+    ├── Card Layout
+    ├── Mobile-Specific Rendering
+    └── Action Positioning (top-right/bottom)
+```
+
+### Key Features Coverage
+
+✅ **Responsive Design**: Desktop table ↔ Mobile cards
+✅ **TypeScript Generics**: Full type safety
+✅ **Column Configuration**: 5 column types documented
+✅ **Action System**: 6 variants with conditions
+✅ **Mobile Layout**: 2 positioning options
+✅ **Loading States**: Skeleton loading
+✅ **Empty States**: Customizable empty state
+✅ **Styling**: Tailwind CSS integration
+✅ **Accessibility**: ARIA labels, keyboard nav
+✅ **Performance**: Memoization tips
+✅ **Migration**: From other table components
+
+### Table vs Card Components
+
+| Feature | CustomTable | Pure Card Components |
+|---------|-------------|---------------------|
+| **Desktop View** | Traditional table with rows/columns | Grid of cards |
+| **Mobile View** | Card layout with structured data | Same card layout |
+| **Data Structure** | Tabular data with consistent fields | Flexible content per card |
+| **Actions** | Row-based actions (edit, delete, etc.) | Card-specific actions |
+| **Sorting/Filtering** | Built-in table functionality | Custom implementation needed |
+| **Use Cases** | Data tables, lists, reports | Galleries, portfolios, product grids |
+| **Examples** | UserListTable, OrderTable, ProductTable | GalleryComponent, PortfolioComponent |
+
+### When to Use CustomTable
+
+✅ **Use CustomTable when:**
+- You have structured data with consistent fields
+- You need desktop table + mobile card responsive behavior
+- You want built-in sorting, filtering, and actions
+- You're displaying lists of similar items (users, orders, products)
+- You need row-based actions and interactions
+
+❌ **Don't use CustomTable when:**
+- You're creating a pure gallery or portfolio
+- You have completely different card layouts per item
+- You don't need table functionality (sorting, filtering)
+- You're building a static card grid
+- You want pure visual presentation without data manipulation
+
+### Advanced Usage Examples
+
+#### 1. Complex Mobile Layout
+```tsx
+{
+  key: 'userInfo',
+  label: 'User Information',
+  render: (value, item) => (
+    <div className="flex items-center space-x-3">
+      <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+      <div>
+        <p className="font-medium">{item.name}</p>
+        <p className="text-sm text-gray-500">{item.email}</p>
+      </div>
+    </div>
+  ),
+  mobileRender: (value, item) => (
+    <div className="space-y-3">
+      <div className="flex items-center space-x-3">
+        <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+        <div>
+          <h3 className="text-lg font-semibold">{item.name}</h3>
+          <p className="text-sm text-gray-600">{item.email}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span className="text-gray-500">Status:</span>
+          <span className="ml-2 font-medium">{item.status}</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Role:</span>
+          <span className="ml-2 font-medium">{item.role}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+#### 2. Action with Multiple States
+```tsx
+{
+  key: 'statusAction',
+  label: 'Toggle Status',
+  icon: item => item.status === 'active' ? Pause : Play,
+  variant: item => item.status === 'active' ? 'warning' : 'success',
+  onClick: (item) => handleToggleStatus(item),
+  condition: (item) => item.canToggleStatus
+}
+```
+
+#### 3. Real-World Data Table Example
+```tsx
+// Example: User Management Table
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: 'active' | 'inactive' | 'pending';
+  lastLogin: Date;
+  createdAt: Date;
+}
+
+const config: TableConfig<User> = {
+  columns: [
+    {
+      key: 'name',
+      label: 'Name',
+      render: (value, user) => (
+        <div className="flex items-center">
+          <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+            <User className="h-4 w-4 text-blue-600" />
+          </div>
+          <span className="text-sm font-medium text-gray-900">
+            {value || 'N/A'}
+          </span>
+        </div>
+      ),
+      mobileRender: (value, user) => (
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {value || 'N/A'}
+          </h3>
+          <p className="text-sm text-gray-600">{user.email || '-'}</p>
+        </div>
+      )
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      render: (value) => value || '-',
+      hideOnMobile: true
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      render: (value) => (
+        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+          {value || 'N/A'}
+        </span>
+      ),
+      hideOnMobile: true
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (value) => (
+        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+          value === 'active' ? 'bg-green-100 text-green-800' : 
+          value === 'inactive' ? 'bg-red-100 text-red-800' :
+          'bg-yellow-100 text-yellow-800'
+        }`}>
+          {value === 'active' ? 'Active' : 
+           value === 'inactive' ? 'Inactive' : 'Pending'}
+        </span>
+      ),
+      mobileRender: (value) => (
+        <div>
+          <div className="text-xs text-gray-500 font-medium">Status</div>
+          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+            value === 'active' ? 'bg-green-100 text-green-800' : 
+            value === 'inactive' ? 'bg-red-100 text-red-800' :
+            'bg-yellow-100 text-yellow-800'
+          }`}>
+            {value === 'active' ? 'Active' : 
+             value === 'inactive' ? 'Inactive' : 'Pending'}
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'lastLogin',
+      label: 'Last Login',
+      render: (value) => value ? formatDate(value) : 'Never',
+      hideOnMobile: true
+    }
+  ],
+  actions: [
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: Edit,
+      variant: 'primary',
+      onClick: (user) => handleEditUser(user),
+      condition: (user) => user.status !== 'inactive'
+    },
+    {
+      key: 'view',
+      label: 'View',
+      icon: Eye,
+      variant: 'secondary',
+      onClick: (user) => handleViewUser(user)
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: Trash2,
+      variant: 'danger',
+      onClick: (user) => handleDeleteUser(user),
+      condition: (user) => user.role !== 'admin'
+    }
+  ],
+  showRowNumbers: true,
+  responsive: true,
+  mobileActionsPosition: 'top-right',
+  emptyState: {
+    icon: Users,
+    title: 'No users found',
+    description: 'Try adjusting your search criteria or filters.'
+  }
+};
+```
+
+### Performance Considerations
+
+1. **Memoize Column Definitions**: Use `useMemo` for complex column configurations
+2. **Optimize Renders**: Use `React.memo` for custom render functions when needed
+3. **Conditional Rendering**: Use `condition` prop for actions instead of filtering data
+4. **Lazy Loading**: Implement pagination for large datasets
+
+### Accessibility
+
+The CustomTable component includes:
+- Proper ARIA labels and roles
+- Keyboard navigation support
+- Screen reader compatibility
+- Focus management for actions
+- Semantic HTML structure
+
+### Migration from Other Table Components
+
+If you encounter other table implementations:
+
+1. **Replace with CustomTable component**
+2. **Convert column definitions to use `key`, `label`, and `render`**
+3. **Convert actions to use the `actions` array**
+4. **Add mobile-specific rendering with `mobileRender`**
+5. **Configure `mobileActionsPosition` based on UX needs**
+6. **Test responsive behavior on different screen sizes**
+
+### Common Patterns
+
+#### 1. Data Table with Search and Actions
+```tsx
+const config: TableConfig<SearchResult> = {
+  columns: [
+    {
+      key: 'title',
+      label: 'Title',
+      render: (value) => <span className="font-medium">{value}</span>,
+      mobileRender: (value, item) => (
+        <div>
+          <h3 className="font-semibold">{value}</h3>
+          <p className="text-sm text-gray-600">{item.description}</p>
+        </div>
+      )
+    }
+  ],
+  actions: [
+    {
+      key: 'view',
+      label: 'View',
+      icon: Eye,
+      variant: 'primary',
+      onClick: (item) => handleView(item)
+    }
+  ],
+  showRowNumbers: true,
+  mobileActionsPosition: 'top-right'
+};
+```
+
+#### 2. Status-Based Table
+```tsx
+const config: TableConfig<Order> = {
+  columns: [
+    {
+      key: 'orderNumber',
+      label: 'Order Number',
+      render: (value) => <span className="font-mono">{value}</span>
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (value) => (
+        <StatusBadge status={value} />
+      ),
+      mobileRender: (value, item) => (
+        <div className="space-y-2">
+          <StatusBadge status={value} />
+          <p className="text-sm text-gray-600">
+            Order #{item.orderNumber}
+          </p>
+        </div>
+      )
+    }
+  ],
+  actions: [
+    {
+      key: 'track',
+      label: 'Track',
+      icon: MapPin,
+      variant: 'info',
+      onClick: (item) => handleTrack(item),
+      condition: (item) => item.status === 'shipped'
+    }
+  ]
+};
+```
+
+#### 3. Financial Data Table
+```tsx
+const config: TableConfig<Transaction> = {
+  columns: [
+    {
+      key: 'id',
+      label: 'Transaction ID',
+      render: (value) => (
+        <span className="font-mono text-sm">{value}</span>
+      )
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      align: 'right',
+      render: (value) => (
+        <span className={`font-semibold ${
+          value > 0 ? 'text-green-600' : 'text-red-600'
+        }`}>
+          {formatCurrency(Math.abs(value))}
+          {value > 0 ? '+' : '-'}
+        </span>
+      ),
+      mobileRender: (value, item) => (
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-500">Amount:</span>
+            <span className={`font-semibold ${
+              value > 0 ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {formatCurrency(Math.abs(value))}
+              {value > 0 ? '+' : '-'}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-500">Type:</span>
+            <span className="text-sm font-medium">{item.type}</span>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'date',
+      label: 'Date',
+      render: (value) => formatDate(value),
+      hideOnMobile: true
+    }
+  ],
+  actions: [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: Eye,
+      variant: 'primary',
+      onClick: (item) => handleViewDetails(item)
+    },
+    {
+      key: 'download',
+      label: 'Download Receipt',
+      icon: Download,
+      variant: 'secondary',
+      onClick: (item) => handleDownloadReceipt(item),
+      condition: (item) => item.hasReceipt
+    }
+  ]
+};
+```
+
+**Remember**: This rule ensures consistency, maintainability, and excellent user experience across all modules. Always use CustomTable for responsive table implementations.
+
+### Troubleshooting Common Issues
+
+#### 1. Import Path Errors
+```tsx
+// ❌ Wrong - assuming path alias exists
+import { CustomTable } from '@/components/ui/CustomTable'
+
+// ✅ Correct - check your project structure first
+// Check tsconfig.json for path mapping:
+// {
+//   "compilerOptions": {
+//     "baseUrl": ".",
+//     "paths": {
+//       "@/*": ["./src/*"]
+//     }
+//   }
+// }
+
+// Then use appropriate import:
+import { CustomTable } from '@/components/ui/CustomTable'  // If @ alias exists
+// OR
+import { CustomTable } from './components/ui/CustomTable'  // If relative path
+// OR
+import { CustomTable } from 'src/components/ui/CustomTable'  // If absolute from src
+```
+
+#### 2. Mobile Actions Not Showing
+```tsx
+// ❌ Wrong - actions not configured
+const config = {
+  columns: [...],
+  // missing actions array
+};
+
+// ✅ Correct - actions properly configured
+const config = {
+  columns: [...],
+  actions: [
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: Edit,
+      variant: 'primary',
+      onClick: (item) => handleEdit(item)
+    }
+  ]
+};
+```
+
+#### 2. Mobile Layout Not Responsive
+```tsx
+// ❌ Wrong - responsive disabled
+const config = {
+  columns: [...],
+  responsive: false // This disables mobile cards
+};
+
+// ✅ Correct - responsive enabled
+const config = {
+  columns: [...],
+  responsive: true // Default value
+};
+```
+
+#### 3. Column Not Hiding on Mobile
+```tsx
+// ❌ Wrong - column shows on mobile
+{
+  key: 'email',
+  label: 'Email',
+  render: (value) => value
+  // missing hideOnMobile
+}
+
+// ✅ Correct - column hidden on mobile
+{
+  key: 'email',
+  label: 'Email',
+  render: (value) => value,
+  hideOnMobile: true
+}
+```
+
+#### 4. Action Condition Not Working
+```tsx
+// ❌ Wrong - condition always returns true
+{
+  key: 'edit',
+  label: 'Edit',
+  icon: Edit,
+  variant: 'primary',
+  onClick: (item) => handleEdit(item),
+  condition: (item) => true // Always shows
+}
+
+// ✅ Correct - proper condition
+{
+  key: 'edit',
+  label: 'Edit',
+  icon: Edit,
+  variant: 'primary',
+  onClick: (item) => handleEdit(item),
+  condition: (item) => item.status === 'active'
+}
+```
+
+### Edge Cases Handled
+
+1. **Empty Data Array**: Shows empty state with custom message
+2. **Loading State**: Shows skeleton loading animation
+3. **No Actions**: Hides action column/buttons completely
+4. **All Columns Hidden on Mobile**: Shows only mobileRender content
+5. **Long Text**: Handles truncation and overflow
+6. **No Mobile Render**: Falls back to desktop render
+7. **Conditional Actions**: All actions can be conditionally shown/hidden
+
+### Integration with Other Components
+
+```tsx
+// With Search/Filter Components
+<div className="space-y-4">
+  <SearchInput onSearch={handleSearch} />
+  <FilterDropdown options={filterOptions} onFilter={handleFilter} />
+  <CustomTable data={filteredData} config={config} />
+</div>
+
+// With Pagination
+<div className="space-y-4">
+  <CustomTable data={currentPageData} config={config} />
+  <Pagination 
+    currentPage={currentPage}
+    totalPages={totalPages}
+    onPageChange={handlePageChange}
+  />
+</div>
+
+// With Loading States
+{loading ? (
+  <CustomTable data={[]} config={config} isLoading={true} />
+) : (
+  <CustomTable data={data} config={config} />
+)}
+```
+
+**⚠️ FAILURE TO FOLLOW THIS RULE WILL RESULT IN:**
+- Inconsistent table behavior across the application
+- Poor mobile user experience
+- Maintenance difficulties
+- Code review rejection
+- Duplicate table implementations

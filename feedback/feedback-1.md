@@ -1,0 +1,9 @@
+hamburger icon / button di navbar saat mobile / responsive view satu saja, yang warna hitam dan bisa di trigger dengan baik drawernya , ingat fokus perubahan di hamburger icon style saja, tidak usah mengubah fungsionalitas yang lain dari sidebar di mobile view karena sudah bagus, sisa hamburger iconnya saja yang masih perlu di perbaiki
+
+apakah bisa pada halaman alquran (http://localhost:3000/alquran/1) itu Qari nya bisa dipilih walaupun kita sudah scroll, karena pasti ada ayat yang panjang yang mungkin mau diganti Qari nya tapi tidak mau scroll keatas, mungkin ketika sudah scroll kebawah akan muncul tombol dikiri bawah itu untuk scroll ke atas langsung dan tombol di kanan seperti kalau di klik muncul drawer dari sisi kanan yang dimana kita bisa memilih qari nya dan card yang hijau yang diatas yang ikutan tidak kelihatan setelah di scroll, informasi-informasinya ada di drawer kanan itu, (bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-6 mb-6 text-white shadow-lg)
+
+dan juga untuk audio nya di halaman ini cukup 1 saja yang nyala audionya, jadi misalkan kita nyalakan yang ayat 1 audionnya, saat nyalakan ayat 2, audio di ayat 1 langsung dimatikan saja, begitu seterusnya, intinya yang boleh aktif audio hanya satu saja.
+
+dibagian paling bawah harusnya ada tombol next / prev untuk surah selanjutnya atau kembali ke surah berikutnya, ingat jika ini di implementasikan maka tombol arrow to top dan button pentrigger drawer kanan itu agak sedikit keatas jika sudah mencapai paling bawah , agar tombol next dan prev itu muncul, ingat kalau surah 1 harusnya tidak ada prevnya, kalau surah terakhir juga harusnya tidak ada nextnya
+
+dan terakhir di navbar ketika ada di halaman http://localhost:3000/alquran/1 , tulisan Al-Quran dikanan atas apakah lebih bagus munculkan surah yang sedang aktif saja ? agar lebih mudah kita lihat sekarang itu surah apa. semoga kamu paham maksudku.

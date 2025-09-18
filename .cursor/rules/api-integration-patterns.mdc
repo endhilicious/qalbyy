@@ -1,0 +1,390 @@
+# API Integration Patterns
+
+## 🎯 CRITICAL: Consistent API Integration
+
+**ALWAYS** follow consistent patterns for API integration. Use proper error handling, loading states, and type safety.
+
+### API Client Setup
+
+```tsx
+// ✅ CORRECT - Centralized API client
+class ApiClient {
+  private baseURL: string
+  private defaultHeaders: HeadersInit
+
+  constructor(baseURL: string) {
+    this.baseURL = baseURL
+    this.defaultHeaders = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`
+    const config: RequestInit = {
+      headers: { ...this.defaultHeaders, ...options.headers },
+      ...options
+    }
+
+    try {
+      const response = await fetch(url, config)
+      
+      if (!response.ok) {
+        throw new ApiError(
+          `HTTP ${response.status}`,
+          response.status,
+          await response.text()
+        )
+      }
+
+      return response.json()
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error
+      }
+      throw new ApiError('Network error', 0, error.message)
+    }
+  }
+
+  // GET request
+  async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
+    const queryString = params ? `?${new URLSearchParams(params)}` : ''
+    return this.request<T>(`${endpoint}${queryString}`)
+  }
+
+  // POST request
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined
+    })
+  }
+
+  // PUT request
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined
+    })
+  }
+
+  // DELETE request
+  async delete<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE' })
+  }
+}
+
+// Custom error class
+class ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public details?: string
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+// Export singleton instance
+export const apiClient = new ApiClient(process.env.NEXT_PUBLIC_API_URL || '/api')
+```
+
+### API Service Functions
+
+```tsx
+// ✅ CORRECT - Service functions with proper typing
+interface User {
+  id: string
+  name: string
+  email: string
+  role: 'admin' | 'user'
+  createdAt: string
+}
+
+interface CreateUserRequest {
+  name: string
+  email: string
+  role: 'admin' | 'user'
+}
+
+interface UpdateUserRequest extends Partial<CreateUserRequest> {
+  id: string
+}
+
+interface UserListResponse {
+  data: User[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+// User service
+export const userService = {
+  // Get users with pagination
+  async getUsers(page: number = 1, limit: number = 10): Promise<UserListResponse> {
+    return apiClient.get<UserListResponse>('/users', { page: String(page), limit: String(limit) })
+  },
+
+  // Get single user
+  async getUser(id: string): Promise<User> {
+    return apiClient.get<User>(`/users/${id}`)
+  },
+
+  // Create user
+  async createUser(data: CreateUserRequest): Promise<User> {
+    return apiClient.post<User>('/users', data)
+  },
+
+  // Update user
+  async updateUser(data: UpdateUserRequest): Promise<User> {
+    return apiClient.put<User>(`/users/${data.id}`, data)
+  },
+
+  // Delete user
+  async deleteUser(id: string): Promise<void> {
+    return apiClient.delete<void>(`/users/${id}`)
+  }
+}
+```
+
+### Custom Hooks for API
+
+```tsx
+// ✅ CORRECT - Custom hook for API data fetching
+import { useState, useEffect, useCallback } from 'react'
+import { userService, User } from '#/services/userService'
+
+interface UseUsersOptions {
+  page?: number
+  limit?: number
+  autoFetch?: boolean
+}
+
+interface UseUsersReturn {
+  users: User[]
+  loading: boolean
+  error: string | null
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  } | null
+  fetchUsers: (page?: number, limit?: number) => Promise<void>
+  refetch: () => Promise<void>
+}
+
+export const useUsers = (options: UseUsersOptions = {}): UseUsersReturn => {
+  const { page = 1, limit = 10, autoFetch = true } = options
+  
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState(null)
+
+  const fetchUsers = useCallback(async (pageNum = page, limitNum = limit) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await userService.getUsers(pageNum, limitNum)
+      setUsers(response.data)
+      setPagination(response.pagination)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch users'
+      setError(message)
+      console.error('Error fetching users:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, limit])
+
+  const refetch = useCallback(() => fetchUsers(), [fetchUsers])
+
+  useEffect(() => {
+    if (autoFetch) {
+      fetchUsers()
+    }
+  }, [fetchUsers, autoFetch])
+
+  return {
+    users,
+    loading,
+    error,
+    pagination,
+    fetchUsers,
+    refetch
+  }
+}
+```
+
+### Component Usage
+
+```tsx
+// ✅ CORRECT - Component using API hook
+import { useUsers } from '#/hooks/useUsers'
+import { ErrorMessage } from '#/components/ErrorMessage'
+import { LoadingSpinner } from '#/components/LoadingSpinner'
+
+export const UserList = () => {
+  const { users, loading, error, pagination, fetchUsers } = useUsers({
+    page: 1,
+    limit: 10
+  })
+
+  const handlePageChange = (newPage: number) => {
+    fetchUsers(newPage, 10)
+  }
+
+  if (loading) {
+    return <LoadingSpinner />
+  }
+
+  if (error) {
+    return (
+      <ErrorMessage
+        message={error}
+        onRetry={() => fetchUsers()}
+      />
+    />
+  }
+
+  return (
+    <div>
+      <div className="grid gap-4">
+        {users.map(user => (
+          <UserCard key={user.id} user={user} />
+        ))}
+      </div>
+      
+      {pagination && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+        />
+      )}
+    </div>
+  )
+}
+```
+
+### Error Handling
+
+```tsx
+// ✅ CORRECT - Comprehensive error handling
+const handleApiOperation = async () => {
+  try {
+    setLoading(true)
+    setError(null)
+    
+    const result = await userService.createUser(userData)
+    setUsers(prev => [...prev, result])
+    toast.success('User created successfully')
+    
+  } catch (error) {
+    let message = 'An unexpected error occurred'
+    
+    if (error instanceof ApiError) {
+      switch (error.statusCode) {
+        case 400:
+          message = 'Invalid data provided'
+          break
+        case 401:
+          message = 'Unauthorized - please login again'
+          // Redirect to login
+          router.push('/login')
+          break
+        case 403:
+          message = 'You do not have permission to perform this action'
+          break
+        case 404:
+          message = 'Resource not found'
+          break
+        case 409:
+          message = 'User with this email already exists'
+          break
+        case 500:
+          message = 'Server error - please try again later'
+          break
+        default:
+          message = error.message
+      }
+    }
+    
+    setError(message)
+    toast.error(message)
+    console.error('API Error:', error)
+  } finally {
+    setLoading(false)
+  }
+}
+```
+
+### What NOT to Do
+
+❌ **Don't make API calls directly in components**
+❌ **Don't ignore API errors**
+❌ **Don't use different patterns for similar operations**
+❌ **Don't forget to handle loading states**
+❌ **Don't hardcode API URLs**
+❌ **Don't mix different HTTP client libraries**
+
+### What TO Do
+
+✅ **Use centralized API client**
+✅ **Implement proper error handling**
+✅ **Show loading states during API calls**
+✅ **Use TypeScript interfaces for API responses**
+✅ **Implement retry mechanisms when appropriate**
+✅ **Cache API responses when possible**
+
+### Caching Strategy
+
+```tsx
+// ✅ CORRECT - Simple caching implementation
+class ApiCache {
+  private cache = new Map<string, { data: unknown; timestamp: number }>()
+  private ttl = 5 * 60 * 1000 // 5 minutes
+
+  set(key: string, data: unknown): void {
+    this.cache.set(key, { data, timestamp: Date.now() })
+  }
+
+  get(key: string): unknown | null {
+    const item = this.cache.get(key)
+    if (!item) return null
+    
+    if (Date.now() - item.timestamp > this.ttl) {
+      this.cache.delete(key)
+      return null
+    }
+    
+    return item.data
+  }
+
+  clear(): void {
+    this.cache.clear()
+  }
+}
+
+export const apiCache = new ApiCache()
+```
+
+**⚠️ FAILURE TO FOLLOW THESE RULES WILL RESULT IN:**
+- Inconsistent API integration
+- Poor error handling
+- Bad user experience
+- Code review rejection
+description:
+globs:
+alwaysApply: false
+---

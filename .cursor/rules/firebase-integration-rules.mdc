@@ -1,0 +1,434 @@
+# Firebase Integration Rules
+
+## 🚨 CRITICAL: Firebase Usage Consistency
+
+**WAJIB DILAKUKAN:** Setiap implementasi Firebase di semua component **HARUS** menggunakan Firebase CRUD service yang sudah dibuat. **DILARANG KERAS** membuat Firebase calls langsung di component tanpa menggunakan service.
+
+### 📁 Firebase CRUD Service Location
+
+**Semua Firebase operations HARUS menggunakan service dari:**
+```
+src/lib/firebase/
+├── firebase.ts              # Firebase configuration
+├── firebase-crud.ts         # Core CRUD service
+├── hooks/useFirebaseCRUD.ts # Custom hooks
+└── index.ts                 # Main exports
+```
+
+## 🎯 Mandatory Firebase Usage Pattern
+
+### ❌ **DILARANG KERAS - Direct Firebase Calls**
+
+```tsx
+// ❌ WRONG - Direct Firebase imports and calls
+import { collection, addDoc, getDocs, updateDoc, deleteDoc } from 'firebase/firestore'
+import { db } from '#/lib/firebase'
+
+// ❌ WRONG - Direct collection calls
+const docRef = await addDoc(collection(db, 'users'), userData)
+const querySnapshot = await getDocs(collection(db, 'users'))
+await updateDoc(doc(db, 'users', userId), updateData)
+await deleteDoc(doc(db, 'users', userId))
+```
+
+### ✅ **WAJIB DILAKUKAN - Use Firebase CRUD Service**
+
+```tsx
+// ✅ CORRECT - Use Firebase CRUD service
+import { useCollection } from '#/lib/firebase'
+
+// In your component
+const { create, getAll, update, remove, loading, error } = useCollection<User>('users')
+
+// Create user
+const handleCreateUser = async () => {
+  const newUser = await create({
+    name: 'John Doe',
+    email: 'john@example.com',
+    role: 'user',
+    isActive: true
+  })
+}
+
+// Get all users
+const handleGetUsers = async () => {
+  const users = await getAll()
+  setUsers(users)
+}
+
+// Update user
+const handleUpdateUser = async (id: string, updates: Partial<User>) => {
+  const updatedUser = await update(id, updates)
+  if (updatedUser) {
+    // Handle success
+  }
+}
+
+// Delete user
+const handleDeleteUser = async (id: string) => {
+  const success = await remove(id)
+  if (success) {
+    // Handle success
+  }
+}
+```
+
+## 🔧 Available Firebase CRUD Operations
+
+### Basic CRUD Operations
+
+```tsx
+const { 
+  create,      // Create new document
+  getById,     // Get document by ID
+  getAll,      // Get all documents
+  update,      // Update document
+  remove       // Delete document
+} = useCollection<User>('users')
+```
+
+### Advanced Query Operations
+
+```tsx
+const { 
+  getWithQuery,        // Get documents with custom query
+  getWithPagination    // Get documents with pagination
+} = useCollection<User>('users')
+
+// Example: Get active admin users with pagination
+const result = await getWithPagination({
+  where: [
+    { field: 'isActive', operator: '==', value: true },
+    { field: 'role', operator: '==', value: 'admin' }
+  ],
+  orderBy: [{ field: 'createdAt', direction: 'desc' }]
+}, 20)
+
+// result contains: { data: User[], lastDoc, hasMore }
+```
+
+### Batch Operations
+
+```tsx
+const { 
+  batchCreate,  // Create multiple documents
+  batchUpdate,  // Update multiple documents
+  batchDelete   // Delete multiple documents
+} = useCollection<User>('users')
+
+// Example: Batch create users
+const users = [
+  { name: 'User 1', email: 'user1@example.com', role: 'user', isActive: true },
+  { name: 'User 2', email: 'user2@example.com', role: 'user', isActive: true }
+]
+
+const createdUsers = await batchCreate(users)
+```
+
+## 📊 Query Options and Filters
+
+### Where Clauses
+
+```tsx
+// Available operators: ==, !=, <, <=, >, >=, in, not-in, array-contains, array-contains-any
+const users = await getWithQuery({
+  where: [
+    { field: 'role', operator: '==', value: 'admin' },
+    { field: 'isActive', operator: '==', value: true },
+    { field: 'createdAt', operator: '>=', value: new Date('2024-01-01') }
+  ]
+})
+```
+
+### Order By
+
+```tsx
+const users = await getWithQuery({
+  orderBy: [
+    { field: 'name', direction: 'asc' },
+    { field: 'createdAt', direction: 'desc' }
+  ]
+})
+```
+
+### Limit and Pagination
+
+```tsx
+// Basic limit
+const users = await getWithQuery({
+  limit: 10
+})
+
+// Pagination with cursor
+const result = await getWithPagination({
+  orderBy: [{ field: 'createdAt', direction: 'desc' }]
+}, 20)
+
+// Next page
+if (result.hasMore && result.lastDoc) {
+  const nextPage = await getWithPagination({
+    orderBy: [{ field: 'createdAt', direction: 'desc' }],
+    startAfter: result.lastDoc
+  }, 20)
+}
+```
+
+## 🎨 Component Implementation Pattern
+
+### Complete Component Example
+
+```tsx
+import { useState, useEffect } from 'react'
+import { useCollection } from '#/lib/firebase'
+
+interface User {
+  id: string
+  name: string
+  email: string
+  role: 'admin' | 'user'
+  isActive: boolean
+}
+
+export const UserList = () => {
+  const [users, setUsers] = useState<User[]>([])
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  
+  const { 
+    getAll, 
+    create, 
+    update, 
+    remove, 
+    loading, 
+    error, 
+    clearError 
+  } = useCollection<User>('users')
+
+  // Load users on component mount
+  useEffect(() => {
+    loadUsers()
+  }, [])
+
+  const loadUsers = async () => {
+    const allUsers = await getAll()
+    setUsers(allUsers)
+  }
+
+  const handleCreateUser = async (userData: Omit<User, 'id'>) => {
+    const newUser = await create(userData)
+    if (newUser) {
+      setUsers(prev => [...prev, newUser])
+      clearError()
+    }
+  }
+
+  const handleUpdateUser = async (id: string, updates: Partial<User>) => {
+    const updatedUser = await update(id, updates)
+    if (updatedUser) {
+      setUsers(prev => prev.map(user => 
+        user.id === id ? updatedUser : user
+      ))
+      clearError()
+    }
+  }
+
+  const handleDeleteUser = async (id: string) => {
+    const success = await remove(id)
+    if (success) {
+      setUsers(prev => prev.filter(user => user.id !== id))
+      clearError()
+    }
+  }
+
+  if (loading) {
+    return <div>Loading users...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="text-red-600">
+        Error: {error}
+        <button onClick={clearError}>Clear Error</button>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {/* User list UI */}
+      {users.map(user => (
+        <div key={user.id}>
+          <span>{user.name}</span>
+          <span>{user.email}</span>
+          <span>{user.role}</span>
+          <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
+        </div>
+      ))}
+    </div>
+  )
+}
+```
+
+## 🔒 Security and Best Practices
+
+### 1. Always Handle Errors
+
+```tsx
+const { create, error, clearError } = useCollection<User>('users')
+
+const handleCreate = async () => {
+  const result = await create(userData)
+  if (result) {
+    // Success
+    clearError()
+    toast.success('User created successfully')
+  } else {
+    // Error is automatically set in the hook
+    toast.error(`Failed to create user: ${error}`)
+  }
+}
+```
+
+### 2. Use Loading States
+
+```tsx
+const { create, loading } = useCollection<User>('users')
+
+return (
+  <button 
+    onClick={handleCreate} 
+    disabled={loading}
+    className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+  >
+    {loading ? 'Creating...' : 'Create User'}
+  </button>
+)
+```
+
+### 3. Type Safety
+
+```tsx
+// Always extend FirebaseDocument interface
+interface User extends FirebaseDocument {
+  name: string
+  email: string
+  role: 'admin' | 'user'
+  isActive: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+// Use with service
+const userService = createFirebaseCRUD<User>('users')
+```
+
+### 4. Environment Variables
+
+**WAJIB DILAKUKAN:** Set semua Firebase environment variables:
+
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
+
+## 🚨 What NOT to Do
+
+❌ **Don't import Firebase functions directly in components**
+❌ **Don't create Firebase collections manually in components**
+❌ **Don't bypass the CRUD service for any Firebase operations**
+❌ **Don't forget to handle loading and error states**
+❌ **Don't ignore TypeScript interfaces for Firebase data**
+❌ **Don't hardcode collection names**
+❌ **Don't forget to set environment variables**
+
+## ✅ What TO Do
+
+✅ **Always use useCollection or useFirebaseCRUD hooks**
+✅ **Always handle errors and loading states**
+✅ **Always use proper TypeScript interfaces**
+✅ **Always follow the established patterns**
+✅ **Always check Firebase documentation for security rules**
+✅ **Always test Firebase operations in development**
+
+## 📋 Firebase Integration Checklist
+
+### Before Implementing Firebase:
+
+- [ ] Environment variables sudah diset
+- [ ] Firebase project sudah dibuat dan dikonfigurasi
+- [ ] Firestore security rules sudah dikonfigurasi
+- [ ] Collection indexes sudah dibuat (jika diperlukan)
+
+### During Implementation:
+
+- [ ] Menggunakan useCollection hook
+- [ ] Handling loading states
+- [ ] Handling error states
+- [ ] Menggunakan proper TypeScript interfaces
+- [ ] Testing semua CRUD operations
+
+### After Implementation:
+
+- [ ] Testing di development environment
+- [ ] Verifying security rules
+- [ ] Checking performance dengan pagination
+- [ ] Documenting collection structure
+
+## 🔍 Troubleshooting
+
+### Common Issues:
+
+1. **Permission Denied**: Check Firestore security rules
+2. **Missing Index**: Create required composite indexes di Firebase console
+3. **Environment Variables**: Pastikan semua Firebase config variables sudah diset
+4. **Collection Names**: Verify collection names match exactly dengan yang di Firestore
+
+### Debug Mode:
+
+```tsx
+// Enable debug logging in development
+if (process.env.NODE_ENV === 'development') {
+  console.log('Firebase config:', firebaseConfig)
+}
+```
+
+## 📚 Additional Resources
+
+- **Firebase Documentation**: https://firebase.google.com/docs
+- **Firestore Security Rules**: https://firebase.google.com/docs/firestore/security/get-started
+- **Firebase Console**: https://console.firebase.google.com
+- **Local README**: `src/lib/firebase/README.md`
+
+## 🔧 TypeScript and 'any' Usage
+
+**Note:** Dalam Firebase integration, penggunaan `any` type diperbolehkan dalam kasus tertentu:
+
+### ✅ **Diperbolehkan menggunakan 'any':**
+
+1. **Dynamic Firestore fields** - Ketika field structure tidak diketahui
+2. **Third-party library data** - Data dari library tanpa type definitions
+3. **Generic utility functions** - Function yang perlu handle berbagai type
+4. **Event handlers** - Untuk event yang tidak diketahui type-nya
+
+### ❌ **Tidak diperbolehkan menggunakan 'any':**
+
+1. **Known data structures** - Ketika interface sudah jelas
+2. **Component props** - Selalu gunakan proper interface
+3. **API responses** - Gunakan proper response types
+4. **State variables** - Gunakan proper types untuk state
+
+**⚠️ FAILURE TO FOLLOW THESE RULES WILL RESULT IN:**
+- Inconsistent Firebase usage across the application
+- Security vulnerabilities
+- Poor error handling and user experience
+- Code duplication and maintenance difficulties
+- Code review rejection
+- Firebase integration chaos
+description:
+globs:
+alwaysApply: false
+---

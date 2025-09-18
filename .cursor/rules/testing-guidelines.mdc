@@ -1,0 +1,299 @@
+# Testing Guidelines
+
+## 🎯 CRITICAL: Test Your Code
+
+**ALWAYS** write tests for your components, hooks, and utilities. Testing ensures code quality, prevents regressions, and makes refactoring safer.
+
+### Test File Structure
+
+```tsx
+// ✅ CORRECT - Test file naming convention
+// Component: src/components/Button/Button.tsx
+// Test: src/components/Button/Button.test.tsx
+
+// Hook: src/hooks/useApi.ts
+// Test: src/hooks/useApi.test.ts
+
+// Utility: src/utils/validation.ts
+// Test: src/utils/validation.test.ts
+```
+
+### Component Testing
+
+```tsx
+// ✅ CORRECT - Component test with proper setup
+import { render, screen, fireEvent } from '@testing-library/react'
+import { Button } from './Button'
+
+describe('Button', () => {
+  const defaultProps = {
+    children: 'Click me',
+    onClick: jest.fn()
+  }
+
+  it('renders with correct text', () => {
+    render(<Button {...defaultProps} />)
+    expect(screen.getByText('Click me')).toBeInTheDocument()
+  })
+
+  it('calls onClick when clicked', () => {
+    render(<Button {...defaultProps} />)
+    fireEvent.click(screen.getByRole('button'))
+    expect(defaultProps.onClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('applies variant classes correctly', () => {
+    render(<Button {...defaultProps} variant="danger" />)
+    const button = screen.getByRole('button')
+    expect(button).toHaveClass('bg-red-600')
+  })
+
+  it('is disabled when disabled prop is true', () => {
+    render(<Button {...defaultProps} disabled />)
+    expect(screen.getByRole('button')).toBeDisabled()
+  })
+})
+```
+
+### Hook Testing
+
+```tsx
+// ✅ CORRECT - Custom hook test
+import { renderHook, act } from '@testing-library/react'
+import { useCounter } from './useCounter'
+
+describe('useCounter', () => {
+  it('initializes with default value', () => {
+    const { result } = renderHook(() => useCounter())
+    expect(result.current.count).toBe(0)
+  })
+
+  it('increments count', () => {
+    const { result } = renderHook(() => useCounter(5))
+    
+    act(() => {
+      result.current.increment()
+    })
+    
+    expect(result.current.count).toBe(6)
+  })
+
+  it('decrements count', () => {
+    const { result } = renderHook(() => useCounter(10))
+    
+    act(() => {
+      result.current.decrement()
+    })
+    
+    expect(result.current.count).toBe(9)
+  })
+
+  it('resets to initial value', () => {
+    const { result } = renderHook(() => useCounter(3))
+    
+    act(() => {
+      result.current.increment()
+      result.current.increment()
+      result.current.reset()
+    })
+    
+    expect(result.current.count).toBe(3)
+  })
+})
+```
+
+### API Testing
+
+```tsx
+// ✅ CORRECT - API function test with mocks
+import { fetchUsers } from './api'
+import { mockUsers } from '../mocks/users'
+
+// Mock fetch globally
+global.fetch = jest.fn()
+
+describe('fetchUsers', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('fetches users successfully', async () => {
+    const mockResponse = {
+      ok: true,
+      json: async () => ({ data: mockUsers, success: true })
+    }
+    ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+
+    const result = await fetchUsers(1, 10)
+    
+    expect(result.data).toEqual(mockUsers)
+    expect(result.success).toBe(true)
+    expect(global.fetch).toHaveBeenCalledWith('/api/users?page=1&limit=10')
+  })
+
+  it('handles API errors', async () => {
+    const mockResponse = {
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error'
+    }
+    ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+
+    await expect(fetchUsers(1, 10)).rejects.toThrow('HTTP 500')
+  })
+
+  it('handles network errors', async () => {
+    ;(global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'))
+
+    await expect(fetchUsers(1, 10)).rejects.toThrow('Network error')
+  })
+})
+```
+
+### Form Testing
+
+```tsx
+// ✅ CORRECT - Form component test
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { LoginForm } from './LoginForm'
+
+describe('LoginForm', () => {
+  const mockOnSubmit = jest.fn()
+
+  beforeEach(() => {
+    mockOnSubmit.mockClear()
+  })
+
+  it('submits form with valid data', async () => {
+    render(<LoginForm onSubmit={mockOnSubmit} />)
+    
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'test@example.com' }
+    })
+    
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: 'password123' }
+    })
+    
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+    
+    await waitFor(() => {
+      expect(mockOnSubmit).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'password123'
+      })
+    })
+  })
+
+  it('shows validation errors for invalid data', async () => {
+    render(<LoginForm onSubmit={mockOnSubmit} />)
+    
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+    
+    await waitFor(() => {
+      expect(screen.getByText(/email is required/i)).toBeInTheDocument()
+      expect(screen.getByText(/password is required/i)).toBeInTheDocument()
+    })
+    
+    expect(mockOnSubmit).not.toHaveBeenCalled()
+  })
+})
+```
+
+### Test Utilities
+
+```tsx
+// ✅ CORRECT - Custom test utilities
+import { render } from '@testing-library/react'
+import { ThemeProvider } from '#/components/ThemeProvider'
+
+// Custom render function with providers
+const renderWithProviders = (ui: React.ReactElement, options = {}) => {
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <ThemeProvider>{children}</ThemeProvider>
+  )
+  
+  return render(ui, { wrapper: Wrapper, ...options })
+}
+
+// Mock data factories
+export const createMockUser = (overrides = {}) => ({
+  id: '1',
+  name: 'John Doe',
+  email: 'john@example.com',
+  role: 'user',
+  ...overrides
+})
+
+export const createMockUsers = (count: number) => 
+  Array.from({ length: count }, (_, i) => 
+    createMockUser({ 
+      id: String(i + 1), 
+      name: `User ${i + 1}`,
+      email: `user${i + 1}@example.com`
+    })
+  )
+```
+
+### What NOT to Do
+
+❌ **Don't skip writing tests**
+❌ **Don't test implementation details**
+❌ **Don't use shallow rendering for component tests**
+❌ **Don't forget to test error cases**
+❌ **Don't test third-party libraries**
+❌ **Don't write brittle tests that break on refactoring**
+
+### What TO Do
+
+✅ **Write tests for all components and hooks**
+✅ **Test user interactions and behavior**
+✅ **Test error states and edge cases**
+✅ **Use meaningful test descriptions**
+✅ **Mock external dependencies**
+✅ **Keep tests focused and isolated**
+
+### Test Coverage
+
+```tsx
+// ✅ CORRECT - Aim for good coverage
+// Components: 90%+ coverage
+// Hooks: 95%+ coverage  
+// Utilities: 100% coverage
+// API functions: 90%+ coverage
+
+// Use coverage reports to identify untested code
+// npm run test:coverage
+```
+
+### Performance Testing
+
+```tsx
+// ✅ CORRECT - Performance test example
+import { render } from '@testing-library/react'
+import { Button } from './Button'
+
+describe('Button Performance', () => {
+  it('renders quickly', () => {
+    const startTime = performance.now()
+    
+    render(<Button>Click me</Button>)
+    
+    const endTime = performance.now()
+    const renderTime = endTime - startTime
+    
+    // Should render in less than 16ms (60fps)
+    expect(renderTime).toBeLessThan(16)
+  })
+})
+```
+
+**⚠️ FAILURE TO FOLLOW THESE RULES WILL RESULT IN:**
+- Poor code quality
+- Regression bugs
+- Difficult refactoring
+- Code review rejection
+description:
+globs:
+alwaysApply: false
+---

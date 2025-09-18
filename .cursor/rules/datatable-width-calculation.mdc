@@ -1,0 +1,107 @@
+# DataTable Width Calculation Rule
+
+## CRITICAL: Desktop Width Calculation for DataTable
+
+### ⚠️ MANDATORY: Prevent Desktop Overlap
+
+When using the DataTable component from `@/src/components/ui/data-table`, **ALWAYS** implement proper width calculation to prevent desktop overlap:
+
+```tsx
+// ✅ CORRECT: Professional width calculation with responsive breakpoints
+<div className="w-full max-w-[calc(100vw-380px)] xl:max-w-[calc(100vw-420px)] 2xl:max-w-[calc(100vw-480px)]">
+  <CardContent className="p-0">
+    <DataTable
+      // ... props
+    />
+  </CardContent>
+</div>
+
+// ❌ WRONG: No width calculation - causes desktop overlap
+<CardContent className="p-0">
+  <DataTable
+    // ... props
+  />
+</CardContent>
+
+// ❌ WRONG: Basic inline style - not responsive
+<div style={{ width: `calc(100vw - 380px)` }}>
+  <DataTable />
+</div>
+```
+
+### Why This Rule Exists
+- **Desktop Overlap**: Without proper width calculation, DataTable can overlap with sidebars/navigation
+- **Responsive Design**: Ensures table works on all screen sizes
+- **Professional UI**: Better space utilization on larger displays
+- **Consistency**: Maintains uniform behavior across the application
+
+### Implementation Guidelines
+1. **Base Width**: Start with `calc(100vw - 380px)` for standard desktop
+2. **Responsive Breakpoints**: Add `xl:` and `2xl:` variants for larger screens
+3. **Container**: Always wrap DataTable in a responsive width container
+4. **Testing**: Verify on different screen sizes (desktop, large desktop, ultra-wide)
+
+### Example Implementation
+```tsx
+{/* Enhanced Data Table with Responsive Design */}
+<Card>
+  <div className="w-full max-w-[calc(100vw-380px)] xl:max-w-[calc(100vw-420px)] 2xl:max-w-[calc(100vw-480px)]">
+    <CardContent className="p-0">
+      <DataTable
+        data={data}
+        columns={columns}
+        filters={filters}
+        searchPlaceholder="Search..."
+        searchKeys={['name', 'email']}
+        actions={(item) => (
+          <div className="flex space-x-2">
+            <Button onClick={() => handleEdit(item)}>Edit</Button>
+            <Button onClick={() => handleDelete(item)}>Delete</Button>
+          </div>
+        )}
+      />
+    </CardContent>
+  </div>
+</Card>
+```
+
+### Responsive Breakpoints Explained
+- **Base**: `max-w-[calc(100vw-380px)]` - Standard desktop (1024px+)
+- **xl**: `xl:max-w-[calc(100vw-420px)]` - Large screens (1280px+)
+- **2xl**: `2xl:max-w-[calc(100vw-480px)]` - Extra large screens (1536px+)
+
+### What Happens Without This Rule
+- **Desktop Layout Breaking**: Table overlaps with navigation/sidebars
+- **Poor User Experience**: Users can't see full table content
+- **Inconsistent UI**: Different tables behave differently across the app
+- **Maintenance Issues**: Hard to fix layout problems later
+
+### Testing Checklist
+- [ ] Test on standard desktop (1024px+)
+- [ ] Test on large desktop (1280px+)
+- [ ] Test on ultra-wide screens (1536px+)
+- [ ] Verify no overlap with navigation/sidebars
+- [ ] Confirm responsive behavior on mobile/tablet
+
+### Integration with Existing Rules
+This rule works together with:
+- `office-table-component.mdc` - General DataTable usage
+- `wajib-dilakukan.mdc` - Mandatory development practices
+- `common-components-priority.mdc` - Component priority guidelines
+
+**⚠️ FAILURE TO FOLLOW THIS RULE WILL RESULT IN:**
+- Desktop layout breaking
+- Table overlapping with navigation/sidebars
+- Poor user experience
+- Inconsistent UI across the application
+- Code review rejection
+
+### Quick Reference
+```tsx
+// Copy-paste this wrapper for every DataTable
+<div className="w-full max-w-[calc(100vw-380px)] xl:max-w-[calc(100vw-420px)] 2xl:max-w-[calc(100vw-480px)]">
+  <CardContent className="p-0">
+    <DataTable {...props} />
+  </CardContent>
+</div>
+```

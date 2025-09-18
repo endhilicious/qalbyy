@@ -1,0 +1,168 @@
+
+# Common Components Priority Rule
+
+## 🎯 PRIORITY: Use Common Components First
+
+**CRITICAL RULE**: Before creating any new input fields, forms, or UI components, you MUST check if there's an existing component in `src/components/common/` that can be used.
+
+### 📁 Common Components Available
+
+The following reusable components are available in `src/components/common/`:
+
+- **TextField** - For text inputs (name, phone, etc.)
+- **EmailField** - For email inputs with validation
+- **PasswordField** - For password inputs with show/hide toggle
+- **SelectField** - For dropdown selections
+- **CheckboxField** - For checkbox inputs
+- **RadioField** - For radio button groups
+
+### 🚫 What NOT to do
+
+- ❌ **Don't create custom input fields with inline styling** - Always use proper component structure
+- ❌ **Don't use raw HTML elements without proper implementation** - Must have styling, validation, accessibility
+- ❌ **Don't duplicate styling patterns** - If pattern exists in common components, reuse it
+- ❌ **Don't create new components without checking common first** - Always search existing components
+
+### ✅ What to do INSTEAD
+
+1. **ALWAYS** import from `@/components/common` first
+2. **ALWAYS** use the existing common components for form inputs
+3. **ALWAYS** follow the established design system patterns
+4. **ONLY** create new components if there's no suitable common component
+
+### 🔧 Implementation Pattern
+
+```tsx
+// ✅ CORRECT - Use existing common components (PREFERRED)
+import { TextField, EmailField, SelectField } from '#/components/common'
+
+<TextField
+  label="Nama Lengkap"
+  required
+  placeholder="Masukkan nama lengkap"
+  error={errors.name}
+/>
+
+// ✅ CORRECT - Create custom input ONLY when no common component exists
+// Must follow these requirements:
+// 1. Proper TypeScript interface
+// 2. Consistent styling with design system
+// 3. Error handling and validation
+// 4. Accessibility features (labels, ARIA)
+// 5. Responsive design
+interface CustomInputProps {
+  label: string
+  error?: string
+  required?: boolean
+  placeholder?: string
+  value: string
+  onChange: (value: string) => void
+  disabled?: boolean
+}
+
+const CustomInput: React.FC<CustomInputProps> = ({
+  label,
+  error,
+  required = false,
+  placeholder,
+  value,
+  onChange,
+  disabled = false
+}) => (
+  <div className="space-y-2">
+    <label className="block text-sm font-medium text-gray-700">
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      disabled={disabled}
+      required={required}
+      className={`
+        w-full px-3 py-2 border rounded-md transition-colors
+        ${error 
+          ? 'border-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500' 
+          : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+        }
+        ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
+      `}
+      aria-invalid={error ? 'true' : 'false'}
+      aria-describedby={error ? `${label}-error` : undefined}
+    />
+    {error && (
+      <p id={`${label}-error`} className="text-sm text-red-600">
+        {error}
+      </p>
+    )}
+  </div>
+)
+
+// ❌ WRONG - Raw HTML without proper implementation
+<input 
+  placeholder="Masukkan nama lengkap"
+  // Missing: label, error handling, styling, accessibility, TypeScript
+/>
+
+// ❌ WRONG - Inline styling instead of proper component
+<input 
+  style={{ 
+    width: '100%', 
+    padding: '8px', 
+    border: '1px solid #ccc' 
+  }}
+  // Missing: proper structure, error handling, accessibility
+/>
+```
+
+### 🎨 Design System Compliance
+
+**All common components MUST follow these styling rules:**
+- **Background**: `bg-white` (solid white, not transparent)
+- **Text Color**: `text-gray-900` (dark, clearly visible)
+- **Border**: `border-gray-300` with `focus:ring-2 focus:ring-blue-500`
+- **Spacing**: Consistent padding, margins, and gaps (4, 6, 8, 12, 16, 20, 24, 32, 48, 64)
+- **Typography**: Consistent font sizes and weights
+- **Responsive**: Mobile-first design with proper breakpoints
+
+### 📋 When Adding New Pages/Components
+
+**Step-by-step process:**
+
+1. **Check common components first** - Search `src/components/common/` for existing solutions
+2. **Import from common** - Use `@/components/common` imports if available
+3. **Follow established patterns** - Use the same prop structure and styling
+4. **Maintain consistency** - Don't break the established design system
+5. **Document new components** - If creating new, add to component list
+
+### 🚨 Breaking Changes
+
+**NEVER modify common components in ways that break existing usage:**
+- **NEVER** change prop names without migration plan
+- **NEVER** remove required props without fallback
+- **NEVER** change styling that breaks existing layouts
+- **ALWAYS** test changes across all pages that use common components
+- **ALWAYS** document any changes to common components
+- **ALWAYS** version if breaking changes are absolutely necessary
+
+### 📚 Documentation Requirements
+
+**Before using or creating components, read:**
+- `src/components/common/common.md` - Detailed component usage
+- `src/components/common/index.ts` - Available exports
+- Existing implementations in login and register pages
+- Component list documentation
+
+---
+
+## 🎯 REMEMBER: Common Components = Design Consistency = Professional Quality
+
+**Every time you're about to create an input field, ask yourself: "Is there a common component I can use instead?"**
+
+**⚠️ FAILURE TO FOLLOW THIS RULE WILL RESULT IN:**
+- Inconsistent design across the application
+- Code duplication and maintenance difficulties
+- Poor user experience and accessibility issues
+- Code review rejection and project delays

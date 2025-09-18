@@ -1,0 +1,392 @@
+
+---
+alwaysApply: true
+---
+
+# Rules Wajib Dilakukan untuk Frontend Development
+
+## 🚨 CRITICAL: MANDATORY PROMPT ANALYSIS & EXECUTION RULES
+
+### 0. PROMPT ANALYSIS - WAJIB DILAKUKAN SETIAP KALI
+**🚨 CRITICAL - WAJIB DILAKUKAN:** Sebelum melakukan apapun, **HARUS** menganalisa prompt dengan teliti dan seksama.
+
+**LANGKAH WAJIB:**
+1. **BACA PROMPT DENGAN TELITI** - Pahami setiap kata dan kalimat dalam prompt
+2. **IDENTIFIKASI SCOPE** - Tentukan dengan jelas apa yang diminta dan apa yang TIDAK diminta
+3. **ANALISA REQUIREMENT** - Pecah requirement menjadi poin-poin spesifik
+4. **TENTUKAN BOUNDARY** - Pastikan tidak melakukan perubahan di luar scope yang diminta
+5. **PLAN EXECUTION** - Buat rencana eksekusi yang fokus pada requirement saja
+
+**RULES STRICT:**
+- **HANYA LAKUKAN** apa yang diperintahkan dalam prompt
+- **JANGAN TAMBAHKAN** fitur atau perubahan yang tidak diminta
+- **JANGAN MENGUBAH** style kecuali diminta secara eksplisit
+- **JANGAN MENGUBAH** flow atau logic yang tidak disebutkan dalam prompt
+- **FOKUS 100%** pada scope requirement yang diberikan
+
+### 0.1. PROFESSIONAL EXECUTION STANDARDS
+**WAJIB DILAKUKAN:** Setiap perubahan harus dilakukan dengan standar profesional tinggi.
+
+**STANDAR WAJIB:**
+- **Web Designer Expert Level** - Implementasi dengan prinsip design yang solid
+- **Senior Frontend Engineer** - Code quality dan architecture yang excellent
+- **Detail Oriented** - Setiap perubahan dilakukan dengan teliti dan detail
+- **Error Prevention** - Pastikan tidak ada error yang terjadi akibat perubahan
+- **Quality Assurance** - Test dan verify setiap perubahan sebelum selesai
+
+**EXECUTION PRINCIPLES:**
+- **Read Carefully** - Baca dan pahami prompt dengan seksama
+- **Analyze Thoroughly** - Analisa requirement dengan detail
+- **Execute Precisely** - Implementasi sesuai dengan yang diminta
+- **Verify Completely** - Pastikan hasil sesuai dengan requirement
+- **Document Properly** - Update dokumentasi sesuai dengan perubahan
+
+### 0.2. CRITICAL SCOPE ADHERENCE RULE
+**🚨 CRITICAL - WAJIB DILAKUKAN:** Lakukan se profesional mungkin sebagai web designer expert dan senior frontend engineer. Pastikan changes yang dilakukan itu didalam scope yang saya instruksikan, jangan mengubah style atau flow yang diluar dari flow yang saya instruksikan di chat prompt ini.
+
+**RULES STRICT UNTUK SCOPE:**
+- **HANYA LAKUKAN** perubahan yang diminta dalam prompt
+- **JANGAN MENGUBAH** style kecuali diminta secara eksplisit
+- **JANGAN MENGUBAH** flow yang tidak disebutkan dalam prompt
+- **FOKUS 100%** pada scope requirement yang diberikan
+- **TIDAK ADA** perubahan di luar yang diinstruksikan
+
+### 0.3. 🚨 ABSOLUTE SCOPE COMPLIANCE RULE - TIDAK BOLEH DILUPA
+**🚨 CRITICAL - WAJIB DIPAHAMI, DIINGAT, DAN TIDAK BOLEH DILUPA SETIAP NGE-PROMPT:**
+
+**PERINGATAN MUTLAK:**
+- **TOLONG UBAH SESUAI YANG DI INSTRUKSIKAN DI PROMPT SAJA**
+- **JANGAN MENGUBAH DILUAR DARI SCOPE YANG DI INSTRUKSIKAN DI CHAT PROMPT**
+- **KARENA HARUSNYA TIDAK PERLU BANYAK PERUBAHAN DAN BERPOTENSI ISSUE JIKA PERUBAHAN DILAKUKAN DILUAR DARI PROMPT**
+- **PASTIKAN JIKA TIDAK RELATE ATAU TIDAK ADA FLOW CODE YANG MENGARAH KE CODE TERSEBUT, JANGAN DI UBAH**
+- **TOLONG DIPERHATIKAN**
+
+**CONTOH KASUS YANG HARUS DIHINDARI:**
+- User minta fix user-management page → JANGAN ubah sidebar atau komponen lain
+- User minta fix bike-lists infinite loop → JANGAN ubah user-management atau komponen lain
+- User minta tambah branch column → JANGAN ubah logic atau flow yang tidak terkait
+- User minta fix Firebase error → JANGAN ubah UI atau komponen yang tidak disebutkan
+
+**RULES MUTLAK:**
+- **SCOPE LOCK** - Hanya ubah yang diminta, tidak lebih
+- **NO SIDEBAR CHANGES** - Jangan ubah sidebar kecuali diminta eksplisit
+- **NO NAVIGATION CHANGES** - Jangan ubah navigation kecuali diminta eksplisit
+- **NO COMPONENT CHANGES** - Jangan ubah komponen yang tidak disebutkan
+- **NO STYLE CHANGES** - Jangan ubah style kecuali diminta eksplisit
+- **NO LOGIC CHANGES** - Jangan ubah logic yang tidak disebutkan
+- **NO ROUTING CHANGES** - Jangan ubah routing kecuali diminta eksplisit
+- **NO LAYOUT CHANGES** - Jangan ubah layout kecuali diminta eksplisit
+
+**VERIFICATION MANDATORY:**
+- **SEBELUM MULAI** - Tanyakan diri: "Apa yang diminta user?"
+- **SELAMA KERJA** - Tanyakan diri: "Apakah ini sesuai dengan yang diminta?"
+- **SESUDAH SELESAI** - Tanyakan diri: "Apakah ada yang diubah di luar scope?"
+
+## 🚨 CRITICAL: UI/UX MANDATORY RULES
+
+### 0. INPUT FIELD TEXT COLOR - WAJIB SELALU DITERAPKAN
+**🚨 CRITICAL - TIDAK BOLEH DILUPA:** Setiap input field, search field, atau form field **HARUS** memiliki text color yang jelas dan mudah dibaca.
+
+**RULES MUTLAK UNTUK INPUT FIELDS:**
+- **WAJIB GUNAKAN:** `text-gray-900` atau `text-black` untuk input text
+- **WAJIB GUNAKAN:** `placeholder-gray-500` atau `placeholder-gray-400` untuk placeholder
+- **JANGAN PERNAH:** Biarkan input field tanpa explicit text color
+- **JANGAN PERNAH:** Gunakan `text-gray-400` atau `text-gray-300` untuk input text
+- **JANGAN PERNAH:** Biarkan text input berwarna abu-abu pucat yang tidak terlihat
+
+**CONTOH IMPLEMENTASI YANG BENAR:**
+```
+className="... text-gray-900 placeholder-gray-500"
+className="... text-black placeholder-gray-400"  
+```
+
+**CONTOH YANG SALAH DAN HARUS DIHINDARI:**
+```
+className="..." // tanpa text color - SALAH
+className="... text-gray-400" // text terlalu pucat - SALAH
+```
+
+**VERIFICATION MANDATORY:**
+- **SEBELUM SUBMIT** - Pastikan semua input field memiliki text color yang jelas
+- **TEST VISUAL** - Cek apakah text terlihat jelas saat user mengetik
+- **CONSISTENCY CHECK** - Pastikan semua input menggunakan text color yang konsisten
+
+## 🚨 CRITICAL: Project Structure dan Documentation Rules
+
+### 1. Changes Recap - History Tracking
+**WAJIB DILAKUKAN:** Setiap selesai membuat sesuatu, **HARUS** update di folder `changes_recap` sebagai history setiap perubahan yang mungkin akan penting untuk pembuatan style, component, atau flow-flow di code yang harus diperhatikan kedepannya agar bisa lebih konsisten.
+
+**PENTING:** Sebelum memberikan jawaban, **PASTIKAN** membaca `changes_recap` agar dapat mengikuti semua informasi yang bisa jadi referensi.
+
+### 2. Reusable Component Structure
+**WAJIB DILAKUKAN:** Setiap component yang dibuat, jika berpotensi reusable, **HARUS** dibuat component tersendiri yang siap untuk di reusable dengan struktur folder sebagai berikut:
+
+```
+/NamaComponent
+├── NamaComponent.tsx    # Component utama
+├── index.ts            # Export file
+├── dataMock.ts         # Mock data (jika ada)
+└── README.md           # Documentation (atau nama md yang lebih bisa dibaca dengan baik oleh cursor AI)
+```
+
+**README.md harus menjelaskan:**
+- Semua perubahan yang terjadi di code ini
+- Poin-poin penting yang bisa jadi referensi kedepannya
+- Cara menggunakan component agar ketika membuat sesuatu yang baru dan mau mengecek reusable-reusable component bisa menggunakan componentnya dengan mudah
+
+### 3. Component List Documentation
+**WAJIB DILAKUKAN:** Jika component yang reusable telah dibuat, **HARUS** diberikan informasi ke `component-list.md` yang ada di folder root `/component` agar nanti kedepannya bisa mengecek semua component yang tersedia dengan informasi-informasi pentingnya dengan mudah.
+
+**Component-list.md harus berisi:**
+- List semua component yang tersedia
+- Kegunaan component secara terperinci
+- Props dan hal-hal penting lainnya dari component tersebut
+- Informasi lengkap untuk memudahkan pencarian dan penggunaan
+
+### 4. Utils dan Helpers Documentation
+**WAJIB DILAKUKAN:** Untuk function seperti helpers dan utils **HARUS** dibuat comment dan dibuatkan `utils-list.md` dan `helper-list.md` di folder `/utils` atau `/helper` agar fungsi yang dibuat tidak duplikat.
+
+**Contoh yang harus dihindari duplikasi:**
+- Currency functions
+- Filter functions (filter ini dan filter itu)
+- Generate variable functions (generate variable ini dan itu)
+- Dan lain-lain
+
+### 5. Global Variables dan Mock Data
+**WAJIB DILAKUKAN:** Variable atau mockdata yang berpotensi digunakan dibanyak tempat, **LEBIH BAIK** dibuatkan global variable dan global mock beserta docsnya agar tidak perlu membuat variable atau mock data yang sama.
+
+**Mengapa ini penting:**
+- Ketika mengubah beberapa perubahan di component/bagian yang menggunakan mockdata atau variable yang di inisiasi di tempat lain dan tidak sadari
+- Variable atau mock datanya pastinya sudah tidak sinkron
+- Ini harus dihindari dengan cara global variable dan mock
+- **INTINYA:** Data terpusat di satu tempat saja
+- **PASTIKAN:** Tidak dibuat duplikat di tempat lain
+
+### 6. Style Consistency
+**WAJIB DILAKUKAN:** Usahakan style selalu konsisten, tidak berubah-ubah.
+
+**Rules untuk Style:**
+- Jika tidak ada keperluan saat enhance sesuatu di component yang sudah ada, **USAHAKAN JANGAN SAMPAI** melakukan perubahan dari sisi style
+- Style harus tetap dipertahankan walau banyak perubahan di component terkait
+- **KECUALI:** Jika request atau prompt tersebut menginginkan perubahan style baru, baru lakukan perubahan style
+- **TAPI:** Selama tidak ada keperluan untuk itu, diusahakan jangan sampai ada perubahan style
+- **INGAT:** Scope dari promptnya, jangan selalu mengubah sesuatu yang tidak diperintahkan dalam prompt
+
+### 7. Error Prevention & Quality Assurance
+**WAJIB DILAKUKAN:** Setiap perubahan harus dicegah dari error dan dijamin kualitasnya.
+
+**Error Prevention Rules:**
+- **LINT CHECK** - Selalu jalankan linting check setelah perubahan
+- **BUILD VERIFICATION** - Pastikan build berhasil tanpa error
+- **TYPE SAFETY** - Pastikan TypeScript types benar dan tidak ada type error
+- **FUNCTIONAL TESTING** - Test functionality yang diubah untuk memastikan bekerja dengan baik
+- **REGRESSION TESTING** - Pastikan perubahan tidak merusak functionality yang sudah ada
+
+**Quality Assurance Standards:**
+- **Code Review** - Review setiap perubahan sebelum finalisasi
+- **Performance Check** - Pastikan tidak ada performance degradation
+- **Accessibility Check** - Pastikan accessibility tetap terjaga
+- **Responsive Check** - Pastikan responsive design tetap bekerja
+- **Browser Compatibility** - Pastikan kompatibilitas browser tetap terjaga
+
+### 8. Scope Adherence & Change Control
+**WAJIB DILAKUKAN:** Setiap perubahan harus mengikuti scope yang ditentukan dalam prompt.
+
+**Scope Control Rules:**
+- **STRICT SCOPE** - Hanya lakukan perubahan yang diminta dalam prompt
+- **NO FEATURE CREEP** - Jangan tambahkan fitur yang tidak diminta
+- **NO STYLE CHANGES** - Jangan ubah style kecuali diminta eksplisit
+- **NO LOGIC CHANGES** - Jangan ubah logic yang tidak disebutkan dalam prompt
+- **NO REFACTORING** - Jangan refactor code yang tidak diminta
+
+**Change Control Process:**
+1. **ANALYZE PROMPT** - Pahami dengan jelas apa yang diminta
+2. **IDENTIFY SCOPE** - Tentukan batasan perubahan yang diperbolehkan
+3. **PLAN CHANGES** - Buat rencana perubahan yang fokus pada scope
+4. **EXECUTE PRECISELY** - Implementasi sesuai dengan rencana
+5. **VERIFY SCOPE** - Pastikan perubahan tidak melampaui scope yang ditentukan
+
+## Responsivitas dan Mobile-First Design
+
+### Prinsip Utama
+- **Mobile-First:** Selalu mulai design dari mobile, kemudian scale up ke desktop
+- **Touch-Friendly:** Semua interactive elements minimal 44x44px untuk mobile
+- **Responsive Breakpoints:** Gunakan Tailwind breakpoints (sm:, md:, lg:, xl:) secara konsisten
+- **Mobile Navigation:** Sidebar harus responsive dengan hamburger menu untuk mobile
+- **Content Prioritization:** Prioritaskan konten penting untuk mobile view
+
+### Implementasi Wajib
+- Gunakan `grid` dan `flex` dengan responsive columns
+- Test di berbagai ukuran screen (320px, 375px, 768px, 1024px+)
+- Pastikan text readable di mobile (minimal 14px untuk body text)
+- Gunakan proper spacing untuk mobile (p-4, m-4, gap-4)
+- Implementasikan proper touch targets
+
+## Layout dan Navigation Guidelines
+
+### General Layout Principles
+- **Consistent Spacing:** Gunakan spacing yang konsisten di seluruh aplikasi
+- **Proper Hierarchy:** Implementasikan visual hierarchy yang jelas
+- **Navigation Consistency:** Navigation pattern harus konsisten di semua halaman
+- **Content Organization:** Organisasi konten yang logis dan mudah dipahami
+
+### Responsive Behavior
+- **Mobile Drawer:** Implementasikan drawer pattern untuk mobile navigation
+- **Desktop Fixed:** Sidebar tetap untuk desktop experience
+- **Breakpoint Consistency:** Gunakan breakpoint yang konsisten di seluruh aplikasi
+- **Touch Optimization:** Optimalkan untuk touch interaction di mobile
+
+## Translation dan Internationalization
+
+### Translation Setup
+- **Simple Implementation:** Gunakan setup translation yang sederhana
+- **No URL Changes:** Jangan mengubah struktur URL untuk translation
+- **Provider Pattern:** Gunakan provider pattern untuk message loading
+- **Consistent Naming:** Gunakan naming convention yang konsisten untuk translation keys
+
+## Komponen dan Styling
+
+### Tailwind CSS
+- Gunakan utility classes Tailwind untuk styling
+- Konsisten dengan color palette yang sudah didefinisikan
+- Gunakan proper spacing scale (4, 6, 8, 12, 16, 20, 24, 32, 48, 64)
+- Implementasikan hover states dan transitions
+
+### Icons
+- Gunakan icon library yang konsisten (Lucide React, Heroicons, dll)
+- Konsisten dengan icon sizes (h-4 w-4, h-5 w-5, h-6 w-6)
+- Proper color coding untuk different states
+
+### Typography
+- Gunakan proper font weights (font-medium, font-semibold, font-bold)
+- Text sizes yang readable (text-sm, text-base, text-lg, text-xl, text-2xl)
+- Proper color contrast untuk accessibility
+
+## State Management dan Interactivity
+
+### React Hooks
+- Gunakan `useState` untuk local state
+- Gunakan `useEffect` untuk side effects dan API calls
+- Implementasikan proper loading dan error states
+
+### User Experience
+- Loading spinners untuk async operations
+- Error handling dengan user-friendly messages
+- Disabled states untuk unverified users
+- Smooth transitions dan animations
+
+## Testing dan Quality
+
+### Mobile Testing
+- Test di berbagai mobile devices
+- Test touch interactions
+- Test responsive breakpoints
+- Test performance di mobile
+
+### Code Quality
+- Gunakan TypeScript interfaces untuk props
+- Proper JSDoc comments
+- Consistent naming conventions
+- Error boundaries untuk error handling
+
+## 📋 Checklist Wajib Setiap Development
+
+### 🚨 PRE-DEVELOPMENT CHECKLIST (WAJIB DILAKUKAN):
+- [ ] **BACA PROMPT DENGAN TELITI** - Pahami setiap kata dan kalimat
+- [ ] **IDENTIFIKASI SCOPE** - Tentukan apa yang diminta dan apa yang TIDAK diminta
+- [ ] **ANALISA REQUIREMENT** - Pecah requirement menjadi poin-poin spesifik
+- [ ] **TENTUKAN BOUNDARY** - Pastikan tidak melakukan perubahan di luar scope
+- [ ] **PLAN EXECUTION** - Buat rencana eksekusi yang fokus pada requirement
+- [ ] **INPUT FIELD CHECK** - Pastikan semua input field akan menggunakan `text-gray-900` atau `text-black`
+- [ ] Baca `changes_recap` untuk referensi terbaru
+- [ ] Cek `component-list.md` untuk component yang tersedia
+- [ ] Cek `utils-list.md` dan `helper-list.md` untuk function yang tersedia
+- [ ] Cek global variables dan mock data yang sudah ada
+
+### 🚨 DURING DEVELOPMENT CHECKLIST (WAJIB DILAKUKAN):
+- [ ] **CRITICAL SCOPE RULE** - Lakukan se profesional mungkin sebagai web designer expert dan senior frontend engineer. Pastikan changes yang dilakukan itu didalam scope yang saya instruksikan, jangan mengubah style atau flow yang diluar dari flow yang saya instruksikan di chat prompt ini
+- [ ] **STRICT SCOPE ADHERENCE** - Hanya lakukan apa yang diminta dalam prompt
+- [ ] **NO FEATURE CREEP** - Jangan tambahkan fitur yang tidak diminta
+- [ ] **NO STYLE CHANGES** - Jangan ubah style kecuali diminta eksplisit
+- [ ] **NO LOGIC CHANGES** - Jangan ubah logic yang tidak disebutkan
+- [ ] **NO REFACTORING** - Jangan refactor code yang tidak diminta
+- [ ] **WEB DESIGNER EXPERT LEVEL** - Implementasi dengan prinsip design solid
+- [ ] **SENIOR FRONTEND ENGINEER** - Code quality dan architecture excellent
+- [ ] **DETAIL ORIENTED** - Setiap perubahan dilakukan dengan teliti dan detail
+
+### 🚨 POST-DEVELOPMENT CHECKLIST (WAJIB DILAKUKAN):
+- [ ] **INPUT FIELD VISUAL CHECK** - Pastikan semua input field text terlihat jelas dan tidak abu-abu pucat
+- [ ] **LINT CHECK** - Jalankan linting check setelah perubahan
+- [ ] **BUILD VERIFICATION** - Pastikan build berhasil tanpa error
+- [ ] **TYPE SAFETY** - Pastikan TypeScript types benar dan tidak ada type error
+- [ ] **FUNCTIONAL TESTING** - Test functionality yang diubah
+- [ ] **REGRESSION TESTING** - Pastikan tidak merusak functionality yang sudah ada
+- [ ] **PERFORMANCE CHECK** - Pastikan tidak ada performance degradation
+- [ ] **RESPONSIVE CHECK** - Pastikan responsive design tetap bekerja
+- [ ] **ACCESSIBILITY CHECK** - Pastikan accessibility tetap terjaga
+- [ ] **BROWSER COMPATIBILITY** - Pastikan kompatibilitas browser tetap terjaga
+- [ ] Update `changes_recap` dengan perubahan yang dilakukan
+- [ ] Jika component reusable, buat struktur folder lengkap dengan README.md
+- [ ] Update `component-list.md` dengan component baru
+- [ ] Update `utils-list.md` atau `helper-list.md` jika ada function baru
+- [ ] Pastikan tidak ada duplikasi data atau function
+
+### 🚨 SCOPE VERIFICATION CHECKLIST (WAJIB DILAKUKAN):
+- [ ] **CRITICAL SCOPE RULE VERIFICATION** - Pastikan lakukan se profesional mungkin sebagai web designer expert dan senior frontend engineer, dan pastikan changes yang dilakukan itu didalam scope yang saya instruksikan, jangan mengubah style atau flow yang diluar dari flow yang saya instruksikan di chat prompt ini
+- [ ] **VERIFY SCOPE COMPLIANCE** - Pastikan perubahan tidak melampaui scope yang ditentukan
+- [ ] **NO UNAUTHORIZED CHANGES** - Pastikan tidak ada perubahan di luar yang diminta
+- [ ] **STYLE CONSISTENCY** - Pastikan style tetap konsisten kecuali diminta berubah
+- [ ] **FUNCTIONALITY INTACT** - Pastikan functionality yang tidak diminta tetap utuh
+- [ ] **CODE QUALITY MAINTAINED** - Pastikan kualitas code tetap terjaga
+
+## 🚨 CRITICAL CONSEQUENCES OF RULE VIOLATIONS
+
+**⚠️ FAILURE TO FOLLOW THESE RULES WILL RESULT IN:**
+
+### Prompt Analysis Failures:
+- **SCOPE CREEP** - Perubahan di luar yang diminta
+- **FEATURE CREEP** - Penambahan fitur yang tidak diminta
+- **STYLE DEVIATION** - Perubahan style yang tidak diizinkan
+- **LOGIC BREAKING** - Perubahan logic yang tidak diminta
+- **REQUIREMENT MISUNDERSTANDING** - Salah paham requirement
+
+### Quality & Professional Standards Failures:
+- **POOR CODE QUALITY** - Code tidak sesuai standar senior engineer
+- **DESIGN INCONSISTENCY** - Design tidak sesuai standar web designer expert
+- **ERROR INTRODUCTION** - Error baru akibat perubahan yang tidak teliti
+- **PERFORMANCE DEGRADATION** - Performance menurun akibat perubahan
+- **MAINTAINABILITY ISSUES** - Code sulit di-maintain
+
+### Technical Failures:
+- **BUILD FAILURES** - Build error akibat perubahan
+- **LINTING ERRORS** - Code quality issues
+- **TYPE ERRORS** - TypeScript type safety issues
+- **RESPONSIVE BREAKING** - Layout rusak di berbagai screen size
+- **ACCESSIBILITY ISSUES** - Accessibility menurun
+- **BROWSER COMPATIBILITY** - Tidak kompatibel dengan browser
+
+### Project Structure Failures:
+- **CODE DUPLICATION** - Duplikasi code dan function
+- **INCONSISTENT STYLING** - Style tidak konsisten antar component
+- **POOR DOCUMENTATION** - Dokumentasi tidak lengkap atau tidak update
+- **MAINTENANCE CHAOS** - Sulit di-maintain dan debug
+- **CODE REVIEW REJECTION** - Code tidak lolos review
+- **PROJECT STRUCTURE CHAOS** - Struktur project berantakan
+
+## 🎯 SUCCESS CRITERIA
+
+**✅ SUCCESSFUL EXECUTION MEANS:**
+- **100% SCOPE COMPLIANCE** - Semua perubahan sesuai dengan yang diminta
+- **ZERO ERRORS** - Tidak ada error yang terjadi
+- **MAINTAINED QUALITY** - Kualitas code dan design tetap terjaga
+- **PROFESSIONAL STANDARDS** - Sesuai standar web designer expert dan senior frontend engineer
+- **DETAILED EXECUTION** - Setiap perubahan dilakukan dengan teliti dan detail
+- **PROPER DOCUMENTATION** - Dokumentasi terupdate dengan baik
+
+**🚀 EXCELLENCE ACHIEVED WHEN:**
+- Prompt dianalisa dengan teliti dan seksama
+- Scope ditentukan dengan jelas dan diikuti dengan ketat
+- Perubahan dilakukan dengan standar profesional tinggi
+- Tidak ada perubahan di luar yang diminta
+- Error prevention dan quality assurance berjalan dengan baik
+- Dokumentasi terupdate dan lengkap

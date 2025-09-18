@@ -1,0 +1,171 @@
+# Office Module Table Component Rules
+
+## IMPORTANT: Table Component Usage in Office Module
+
+When working in the `apps/office` module, **ALWAYS** use the new `DataTable` component instead of creating custom table implementations or using other table libraries.
+
+### Mandatory Table Component
+
+**Use this component for ALL table implementations:**
+```tsx
+import { DataTable, DataTableColumn, DataTableFilter } from '#/src/components/ui/data-table'
+```
+
+### Why Use DataTable?
+
+1. **Built-in Features**: Search, filtering, sorting, pagination, column visibility
+2. **Responsive Design**: Mobile-friendly with responsive actions
+3. **TypeScript Support**: Full type safety with generics
+4. **Consistent UX**: Uniform table behavior across the office module
+5. **Maintainability**: Single source of truth for table functionality
+
+### Implementation Pattern
+
+```tsx
+// Define columns with proper typing
+const columns: DataTableColumn<YourDataType>[] = [
+  {
+    accessorKey: 'fieldName',
+    header: 'Display Name',
+    sortable: true,
+    width: '200px',
+    cell: ({ row }) => (
+      // Custom cell rendering if needed
+      <span>{row.original.fieldName}</span>
+    )
+  }
+]
+
+// Define filters if needed
+const filters: DataTableFilter[] = [
+  {
+    id: 'status',
+    label: 'Status',
+    type: 'select',
+    options: [
+      { value: 'active', label: 'Active' },
+      { value: 'inactive', label: 'Inactive' }
+    ],
+    placeholder: 'All Statuses'
+  }
+]
+
+// Use the component with Card wrapper
+<Card>
+  <CardContent className="p-6">
+    <DataTable
+      data={yourData}
+      columns={columns}
+      filters={filters}
+      searchPlaceholder="Search..."
+      searchKeys={['name', 'email', 'description']}
+      actions={(item) => (
+        <div className="flex space-x-2">
+          <Button onClick={() => handleEdit(item)}>Edit</Button>
+          <Button onClick={() => handleDelete(item)}>Delete</Button>
+        </div>
+      )}
+    />
+  </CardContent>
+</Card>
+```
+
+### What NOT to Do
+
+❌ **Don't create custom table components**
+❌ **Don't use MaterialDataTable or other table libraries**
+❌ **Don't implement separate filter/search components**
+❌ **Don't use basic HTML tables for data display**
+
+### What TO Do
+
+✅ **Always use DataTable component**
+✅ **Define proper TypeScript interfaces for your data**
+✅ **Use the built-in filtering and search capabilities**
+✅ **Implement responsive actions for mobile/desktop**
+✅ **Follow the established column definition pattern**
+✅ **Always wrap DataTable in Card component from parent**
+✅ **Use proper padding (p-6) in CardContent**
+
+### File Locations
+
+- **Component**: `apps/office/src/components/ui/data-table.tsx`
+- **Documentation**: `apps/office/src/components/ui/README.md`
+- **Icon Component**: `apps/office/src/components/ui/icon.tsx`
+
+### Migration from Old Tables
+
+If you encounter old table implementations:
+
+1. Replace with DataTable component
+2. Convert column definitions to use `accessorKey` and `cell`
+3. Remove separate filter/search components
+4. Update action handlers to use the `actions` prop
+5. Test responsive behavior
+
+### Examples of Good Usage
+
+See these files for reference implementations:
+- `apps/office/app/users/students/page.tsx` - Students table
+- `apps/office/src/components/ui/data-table.tsx` - Component source
+- `apps/office/src/components/ui/README.md` - Full documentation
+
+### Responsive Design Features
+
+The DataTable component automatically handles responsive behavior:
+
+1. **Horizontal Scrolling**: When table content exceeds screen width, horizontal scroll appears automatically
+2. **Mobile Optimization**: On small screens, only essential columns are visible by default
+3. **Responsive Actions**: Desktop shows text labels, mobile shows icon-only buttons
+4. **Flexible Layout**: Search, filters, and pagination adapt to screen size
+5. **Touch Friendly**: Optimized for touch devices with proper spacing
+
+### Column Width Guidelines
+
+For optimal responsive behavior:
+
+```tsx
+const columns: DataTableColumn<User>[] = [
+  {
+    accessorKey: 'name',
+    header: 'Name',
+    width: '200px',        // Fixed width for important columns
+    minWidth: '150px',     // Minimum width to prevent squashing
+  },
+  {
+    accessorKey: 'email',
+    header: 'Email',
+    width: '250px',        // Fixed width for email
+    minWidth: '200px',
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    width: '100px',        // Compact width for simple data
+    minWidth: '80px',
+  }
+]
+```
+
+### Performance Considerations
+
+1. Use `useMemo` for column definitions
+2. Implement proper data fetching with pagination
+3. Consider virtual scrolling for very large datasets
+4. Debounce search inputs for better performance
+
+### Accessibility
+
+The DataTable component includes:
+- Keyboard navigation support
+- Screen reader compatibility
+- ARIA labels and roles
+- Focus management
+
+**Remember**: This rule ensures consistency, maintainability, and better user experience across the entire office module. Always use DataTable for table implementations.
+
+**⚠️ FAILURE TO FOLLOW THIS RULE WILL RESULT IN:**
+- Inconsistent table behavior across the application
+- Poor user experience
+- Maintenance difficulties
+- Code review rejection

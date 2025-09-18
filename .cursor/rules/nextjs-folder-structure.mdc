@@ -1,0 +1,103 @@
+# Next.js Folder Structure Rules (MANDATORY)
+
+## App Router Structure
+- **`src/app/`** - Contains ONLY route files (page.tsx, layout.tsx, etc.)
+- **`src/screens/`** - Contains ALL page components and screen-level components  
+- **`src/components/`** - Contains reusable UI components
+
+## Page Creation Pattern (REQUIRED)
+When creating a new page:
+1. Create `src/app/[route]/page.tsx` (route handler only)
+2. Create `src/screens/[ScreenName]/index.tsx` (actual component)
+3. Import screen component into page.tsx
+
+## Example Structure
+```
+src/
+├── app/
+│   ├── page.tsx (imports HomeScreen)
+│   ├── about/
+│   │   └── page.tsx (imports AboutScreen)
+│   └── contact/
+│       └── page.tsx (imports ContactScreen)
+├── screens/
+│   ├── Home/
+│   │   └── HomeScreens.tsx
+│   │   └── index.tsx
+│   ├── About/
+│   │   └── AboutScreens.tsx
+│   │   └── index.tsx
+│   └── Contact/
+│       └── ContactScreens.tsx
+│   │   └── index.tsx
+└── components/
+    ├── Button/
+    │   └── Button.tsx
+    │   └── index.tsx
+    ├── Header/
+    │   └── Header.tsx
+    │   └── index.tsx
+    ├── Footer/
+    │   └── Footer.tsx
+    │   └── index.tsx
+```
+
+## Page.tsx Template (MANDATORY)
+```tsx
+import React from 'react'
+import [ScreenName] from '#/screens/[ScreenName]'
+
+const page = () => {
+  // Route-specific logic only (params, feature flags, etc.)
+  return (
+    <[ScreenName] />
+  )
+}
+
+export default page
+```
+
+## Screen Component Template (MANDATORY)
+```tsx
+import React from 'react'
+
+const [ScreenName] = () => {
+  return (
+    <div>
+      {/* Screen content */}
+    </div>
+  )
+}
+
+export default [ScreenName]
+```
+
+## index Template
+```tsx
+
+export { default } from './componentsName'
+```
+
+## Import Paths
+- Use `#/screens/[ScreenName]` for screen imports
+- Use `#/components/[ComponentName]` for component imports
+- Use `#/` as alias for `src/`
+
+## Naming Conventions
+- **Pages**: lowercase with hyphens (`about-us`, `contact-form`)
+- **Screens**: PascalCase (`AboutUs`, `ContactForm`)
+- **Components**: PascalCase (`Button`, `Header`)
+
+## Violation Consequences
+- ❌ NO components in app/ folder
+- ❌ NO business logic in page.tsx
+- ❌ NO direct component creation in page.tsx
+- ✅ ONLY route handling in page.tsx
+- ✅ ONLY component rendering in page.tsx
+- ✅ ALL business logic in screens/
+
+**This structure is MANDATORY for all new pages and components.**
+description:
+globs:
+alwaysApply: true
+---
