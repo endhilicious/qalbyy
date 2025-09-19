@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useSidebar } from '#/contexts/SidebarContext';
 import { MENU_ITEMS } from '#/constants/menu';
+import AddToHomescreen from '#/components/AddToHomescreen';
 
 export default function Sidebar() {
   const { isDesktopMinimized, toggleDesktopMinimize, isMobileOpen, setIsMobileOpen, toggleMobile } = useSidebar();
@@ -206,6 +207,13 @@ export default function Sidebar() {
             );
           })}
         </nav>
+
+        {/* Add to Homescreen Section */}
+        {!isDesktopMinimized && (
+          <div className="px-3 lg:px-4 py-2">
+            <AddToHomescreen />
+          </div>
+        )}
 
         {/* Footer */}
         <div className="p-3 lg:p-4 border-t border-green-200 flex-shrink-0">

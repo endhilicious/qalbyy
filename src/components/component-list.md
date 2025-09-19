@@ -194,3 +194,36 @@ const {
   selectedQari="01"
 />
 ```
+
+## AddToHomescreen
+**Lokasi:** `src/components/AddToHomescreen`  
+**Kegunaan:** Komponen untuk menampilkan tombol dan prompt install aplikasi ke homescreen  
+**Props:**
+- `className?: string` - CSS class tambahan
+
+**Design Features:**
+- Auto-detect device capabilities (iOS vs Android/Chrome)
+- BeforeInstallPrompt event handling untuk Android/Chrome
+- Custom iOS instructions modal
+- Install progress tracking
+- Automatic hiding saat sudah dalam standalone mode
+- Modern modal design dengan instructions
+
+**Browser Support:**
+- ✅ Android Chrome: Native install prompt
+- ✅ iOS Safari: Manual instructions dengan modal
+- ✅ Desktop Chrome/Edge: Native install prompt
+- ✅ Auto-hide saat sudah installed (standalone mode)
+
+**Contoh Penggunaan:**
+```tsx
+// Sudah terintegrasi di Sidebar
+<AddToHomescreen />
+```
+
+**Features:**
+- Deteksi otomatis platform (iOS/Android/Desktop)
+- Install prompt native untuk browser yang support
+- Modal instruksi manual untuk iOS
+- Tracking status instalasi
+- UI/UX yang user-friendly

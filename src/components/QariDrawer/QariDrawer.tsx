@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Volume2, ChevronDown, List, Hash } from 'lucide-react';
+import { X, Volume2, ChevronDown, List, Hash, RotateCcw } from 'lucide-react';
+import { useAudio } from '#/contexts/AudioContext';
 
 const QARI_NAMES: Record<string, string> = {
   '01': 'Abdullah Al-Juhany',
@@ -36,6 +37,7 @@ const QariDrawer: React.FC<QariDrawerProps> = ({
 }) => {
   const [showQariDropdown, setShowQariDropdown] = useState(false);
   const [showAyatDropdown, setShowAyatDropdown] = useState(false);
+  const { isReplayEnabled, setIsReplayEnabled } = useAudio();
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -182,6 +184,40 @@ const QariDrawer: React.FC<QariDrawerProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Replay Settings */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <RotateCcw className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Replay Audio</h3>
+                </div>
+                
+                <div className="bg-white border border-gray-300 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-gray-900 font-medium">Auto Replay</p>
+                      <p className="text-gray-600 text-sm mt-1">
+                        Audio akan otomatis terulang setelah selesai dengan jeda 3 detik
+                      </p>
+                    </div>
+                    <div className="ml-4">
+                      <button
+                        onClick={() => setIsReplayEnabled(!isReplayEnabled)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                          isReplayEnabled ? 'bg-green-600' : 'bg-gray-300'
+                        }`}
+                        aria-pressed={isReplayEnabled}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            isReplayEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Tips */}
               <div className="space-y-4">

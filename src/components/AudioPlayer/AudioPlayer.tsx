@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Play, Pause, Volume2, VolumeX, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { getBestAudioUrl, getAudioLoadingStrategy } from '#/utils/audioUtils';
+import { useAudio } from '#/contexts/AudioContext';
 
 interface AudioPlayerProps {
   audioSources: Record<string, string>;
@@ -39,28 +41,248 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [selectedQari, setSelectedQari] = useState(defaultQari);
   const [showQariList, setShowQariList] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  
+  // Use global audio context
+  const { currentPlayingId, setCurrentPlaying, audioRefs, isReplayEnabled, replayTimeoutRefs } = useAudio();
+  const audioId = 'full-surat-player';
 
-  const currentAudioUrl = audioSources[selectedQari];
+  // Memoize audio URL to prevent infinite re-renders
+  const currentAudioUrl = useMemo(() => {
+    const url = getBestAudioUrl(audioSources, selectedQari);
+    console.log('🎵 [AudioPlayer] URL Memoized:', {
+      selectedQari,
+      url,
+      timestamp: new Date().toISOString()
+    });
+    return url;
+  }, [audioSources, selectedQari]);
+
+  // Reset error state when URL changes (surah navigation)
+  useEffect(() => {
+    console.log('🔄 [AudioPlayer] Resetting state for new URL:', currentAudioUrl);
+    setError(null);
+    setLoading(false);
+  }, [currentAudioUrl]);
+
+  // Detect iOS
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent) || 
+                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    setIsIOS(isIOSDevice);
+  }, []);
+
+  // iOS audio unlock function
+  const unlockAudioiOS = useCallback(async () => {
+    if (!isIOS || audioUnlocked || !audioRef.current) return true;
+    
+    try {
+      // Simple unlock by trying to play current audio silently
+      const audio = audioRef.current;
+      const originalVolume = audio.volume;
+      audio.volume = 0;
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = originalVolume;
+      setAudioUnlocked(true);
+      return true;
+    } catch (error) {
+      console.warn('Failed to unlock iOS audio:', error);
+      return false;
+    }
+  }, [isIOS, audioUnlocked]);
+
+  // Register this audio element
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRefs.current[audioId] = audioRef.current;
+    }
+    return () => {
+      // Simple cleanup
+      const audio = audioRefs.current[audioId];
+      if (audio) {
+        try {
+          audio.pause();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
+      delete audioRefs.current[audioId];
+      
+      // Clear any pending replay timeout
+      const timeout = replayTimeoutRefs.current[audioId];
+      if (timeout) {
+        clearTimeout(timeout);
+        delete replayTimeoutRefs.current[audioId];
+      }
+    };
+  }, [audioId, audioRefs, replayTimeoutRefs]);
+
+  // Update playing state when currentPlayingId changes
+  useEffect(() => {
+    const shouldBePlaying = currentPlayingId === audioId;
+    if (isPlaying !== shouldBePlaying) {
+      setIsPlaying(shouldBePlaying);
+      if (!shouldBePlaying && audioRef.current) {
+        audioRef.current.pause();
+      }
+    }
+  }, [currentPlayingId, audioId, isPlaying]);
 
   // Sync with parent's qari selection
   useEffect(() => {
+    console.log('🔄 [AudioPlayer] Syncing qari selection:', {
+      oldQari: selectedQari,
+      newQari: defaultQari,
+      timestamp: new Date().toISOString()
+    });
     setSelectedQari(defaultQari);
-  }, [defaultQari]);
+  }, [defaultQari, selectedQari]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
-    const handleLoadStart = () => setLoading(true);
-    const handleCanPlay = () => setLoading(false);
-    const handleError = () => {
-      setError('Gagal memuat audio');
-      setLoading(false);
-      setIsPlaying(false);
+    const updateDuration = () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        setDuration(audio.duration);
+      }
     };
-    const handleEnded = () => setIsPlaying(false);
+    const handleLoadStart = () => {
+      console.log('📥 [AudioPlayer] Load started:', {
+        url: currentAudioUrl,
+        qari: selectedQari,
+        isIOS,
+        timestamp: new Date().toISOString()
+      });
+      setLoading(true);
+      setError(null);
+    };
+    const handleCanPlay = () => {
+      console.log('✅ [AudioPlayer] Can play:', {
+        url: currentAudioUrl,
+        qari: selectedQari,
+        duration: audio.duration,
+        readyState: audio.readyState,
+        isIOS,
+        timestamp: new Date().toISOString()
+      });
+      setLoading(false);
+      setError(null);
+    };
+    const handleError = (e: Event) => {
+      console.error('❌ [AudioPlayer] Audio error:', {
+        error: e,
+        url: currentAudioUrl,
+        qari: selectedQari,
+        isPlaying,
+        loading,
+        isIOS,
+        audioUnlocked,
+        readyState: audio.readyState,
+        networkState: audio.networkState,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Don't show error immediately on iOS to prevent phantom errors
+      if (!isIOS || isPlaying) {
+        console.log('🚨 [AudioPlayer] Showing error to user');
+        const errorMsg = isIOS && !audioUnlocked 
+          ? 'Tap tombol play untuk memulai audio' 
+          : 'Gagal memuat audio. Periksa koneksi internet Anda.';
+        setError(errorMsg);
+        setLoading(false);
+        setCurrentPlaying(null);
+      } else {
+        console.log('🤐 [AudioPlayer] Suppressing phantom iOS error');
+      }
+    };
+    const handleEnded = () => {
+      console.log('🏁 [AudioPlayer] Audio ended:', {
+        isReplayEnabled,
+        audioId,
+        timestamp: new Date().toISOString()
+      });
+      
+      if (isReplayEnabled) {
+        console.log('🔄 [AudioPlayer] Setting up replay after 3 seconds');
+        // Clear any existing timeout for this audio
+        const existingTimeout = replayTimeoutRefs.current[audioId];
+        if (existingTimeout) {
+          clearTimeout(existingTimeout);
+        }
+        
+        // Set new timeout for replay
+        const timeout = setTimeout(() => {
+          console.log('🔄 [AudioPlayer] Replaying audio after timeout');
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(error => {
+              console.error('❌ [AudioPlayer] Replay failed:', error);
+              setCurrentPlaying(null);
+            });
+          }
+          delete replayTimeoutRefs.current[audioId];
+        }, 3000); // 3 second delay
+        
+        replayTimeoutRefs.current[audioId] = timeout;
+      } else {
+        setCurrentPlaying(null);
+      }
+    };
+    const handleStalled = () => {
+      // Only show stalled error if audio was actively playing (not on iOS phantom stalls)
+      if (isIOS && isPlaying) {
+        setError('Audio terhenti. Coba tap play lagi.');
+        setLoading(false);
+        setCurrentPlaying(null);
+      }
+    };
+    const handleWaiting = () => {
+      console.log('⏳ [AudioPlayer] Audio waiting (buffering):', {
+        url: currentAudioUrl,
+        qari: selectedQari,
+        currentLoading: loading,
+        isIOS,
+        timestamp: new Date().toISOString()
+      });
+      if (!loading) {
+        console.log('🔄 [AudioPlayer] Setting loading=true due to waiting');
+        setLoading(true);
+      }
+    };
+    const handlePlaying = () => {
+      console.log('▶️ [AudioPlayer] Audio playing:', {
+        url: currentAudioUrl,
+        qari: selectedQari,
+        duration: audio.duration,
+        isIOS,
+        timestamp: new Date().toISOString()
+      });
+      setLoading(false);
+      setError(null);
+    };
+
+    // Apply audio loading strategy
+    const strategy = getAudioLoadingStrategy(isIOS);
+    console.log('🔧 [AudioPlayer] Applying audio loading strategy:', {
+      strategy,
+      isIOS,
+      audioElement: audio.tagName,
+      timestamp: new Date().toISOString()
+    });
+    
+    Object.entries(strategy).forEach(([key, value]) => {
+      if (key === 'preload') {
+        audio.preload = value as '' | 'none' | 'metadata' | 'auto';
+      } else {
+        audio.setAttribute(key, value as string);
+      }
+    });
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
@@ -68,6 +290,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('error', handleError);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('stalled', handleStalled);
+    audio.addEventListener('waiting', handleWaiting);
+    audio.addEventListener('playing', handlePlaying);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
@@ -76,8 +301,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('stalled', handleStalled);
+      audio.removeEventListener('waiting', handleWaiting);
+      audio.removeEventListener('playing', handlePlaying);
     };
-  }, [currentAudioUrl]);
+  }, [currentAudioUrl, isIOS, audioUnlocked, loading]);
 
   useEffect(() => {
     if (autoPlay && audioRef.current && currentAudioUrl) {
@@ -86,23 +314,125 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPlay, currentAudioUrl]);
 
-  const handlePlay = async () => {
-    if (!audioRef.current || !currentAudioUrl) return;
+  const handlePlay = useCallback(async () => {
+    console.log('🎵 [AudioPlayer] Play button clicked:', {
+      hasAudioRef: !!audioRef.current,
+      currentAudioUrl,
+      selectedQari,
+      isPlaying,
+      loading,
+      isIOS,
+      audioUnlocked,
+      timestamp: new Date().toISOString()
+    });
+    
+    if (!audioRef.current || !currentAudioUrl) {
+      console.log('❌ [AudioPlayer] Cannot play - missing audio ref or URL');
+      return;
+    }
     
     try {
       setError(null);
+      
       if (isPlaying) {
+        console.log('⏸️ [AudioPlayer] Pausing current audio');
         audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        await audioRef.current.play();
-        setIsPlaying(true);
+        
+        // Clear any pending replay timeout when user manually stops
+        const timeout = replayTimeoutRefs.current[audioId];
+        if (timeout) {
+          console.log('🚫 [AudioPlayer] Clearing pending replay timeout');
+          clearTimeout(timeout);
+          delete replayTimeoutRefs.current[audioId];
+        }
+        
+        setCurrentPlaying(null);
+        return;
       }
-    } catch {
-      setError('Gagal memutar audio');
-      setIsPlaying(false);
+
+      // For iOS, ensure audio is unlocked first
+      if (isIOS && !audioUnlocked) {
+        console.log('🔓 [AudioPlayer] iOS audio not unlocked, attempting unlock...');
+        const unlocked = await unlockAudioiOS();
+        if (!unlocked) {
+          console.log('❌ [AudioPlayer] iOS audio unlock failed');
+          setError('Tap tombol play sekali lagi untuk memulai audio');
+          return;
+        }
+        console.log('✅ [AudioPlayer] iOS audio unlocked successfully');
+      }
+
+      console.log('📥 [AudioPlayer] Setting loading=true, starting play process');
+      setLoading(true);
+      
+      // Load the audio if not loaded
+      const readyState = audioRef.current.readyState;
+      console.log('🔍 [AudioPlayer] Audio ready state:', {
+        readyState,
+        networkState: audioRef.current.networkState,
+        src: audioRef.current.src,
+        duration: audioRef.current.duration
+      });
+      
+      if (readyState === 0) {
+        console.log('📥 [AudioPlayer] Audio not loaded, calling load()...');
+        audioRef.current.load();
+        
+        console.log('⏳ [AudioPlayer] Waiting for canplay event...');
+        await new Promise((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            console.log('⏰ [AudioPlayer] Canplay timeout after 10s');
+            audioRef.current?.removeEventListener('canplay', handleCanPlay);
+            audioRef.current?.removeEventListener('error', handleError);
+            reject(new Error('Canplay timeout'));
+          }, 10000); // 10s timeout
+          
+          const handleCanPlay = () => {
+            console.log('✅ [AudioPlayer] Canplay event received');
+            clearTimeout(timeoutId);
+            audioRef.current?.removeEventListener('canplay', handleCanPlay);
+            audioRef.current?.removeEventListener('error', handleError);
+            resolve(void 0);
+          };
+          const handleError = (e: Event) => {
+            console.log('❌ [AudioPlayer] Error during load wait:', e);
+            clearTimeout(timeoutId);
+            audioRef.current?.removeEventListener('canplay', handleCanPlay);
+            audioRef.current?.removeEventListener('error', handleError);
+            reject(new Error('Failed to load audio'));
+          };
+          audioRef.current?.addEventListener('canplay', handleCanPlay);
+          audioRef.current?.addEventListener('error', handleError);
+        });
+      }
+
+      console.log('▶️ [AudioPlayer] Setting current playing and calling play()');
+      setCurrentPlaying(audioId);
+      
+      await audioRef.current.play();
+      
+      console.log('✅ [AudioPlayer] Play successful, setting loading=false');
+      setLoading(false);
+      
+    } catch (error) {
+      console.error('❌ [AudioPlayer] Play error:', {
+        error,
+        url: currentAudioUrl,
+        qari: selectedQari,
+        isIOS,
+        readyState: audioRef.current?.readyState,
+        networkState: audioRef.current?.networkState,
+        timestamp: new Date().toISOString()
+      });
+      
+      const errorMsg = isIOS 
+        ? 'Gagal memutar audio. Pastikan tidak ada audio lain yang sedang berjalan.' 
+        : 'Gagal memutar audio. Periksa koneksi internet Anda.';
+      setError(errorMsg);
+      setCurrentPlaying(null);
+      setLoading(false);
     }
-  };
+  }, [currentAudioUrl, selectedQari, isPlaying, loading, isIOS, audioUnlocked, unlockAudioiOS, setCurrentPlaying]);
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!audioRef.current) return;
@@ -123,11 +453,19 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     setCurrentTime(0);
   };
 
-  const handleQariChange = (qariId: string) => {
+  const handleQariChange = useCallback((qariId: string) => {
+    console.log('🎛️ [AudioPlayer] Qari change initiated:', {
+      fromQari: selectedQari,
+      toQari: qariId,
+      wasPlaying: isPlaying,
+      timestamp: new Date().toISOString()
+    });
+    
     const wasPlaying = isPlaying;
     if (isPlaying) {
+      console.log('⏸️ [AudioPlayer] Pausing current audio for qari change');
       audioRef.current?.pause();
-      setIsPlaying(false);
+      setCurrentPlaying(null);
     }
     
     setSelectedQari(qariId);
@@ -144,7 +482,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         handlePlay();
       }, 100);
     }
-  };
+  }, [isPlaying, onQariChange, setCurrentPlaying, selectedQari]);
 
   const formatTime = (time: number): string => {
     if (isNaN(time)) return '0:00';
@@ -173,9 +511,10 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       {/* Audio Element */}
       <audio
         ref={audioRef}
-        src={currentAudioUrl}
-        preload="metadata"
+        src={currentAudioUrl || ''}
+        preload={isIOS ? 'none' : 'metadata'}
         muted={isMuted}
+        playsInline={true}
       />
 
       {/* Player Controls */}

@@ -7,6 +7,7 @@ import AudioPlayer, { AyatAudioPlayer } from '#/components/AudioPlayer';
 import FloatingActionButtons from '#/components/FloatingActionButtons';
 import QariDrawer from '#/components/QariDrawer';
 import SurahNavigation from '#/components/SurahNavigation';
+import { AyatLoadingSkeleton } from '#/components/LoadingSkeleton';
 import { AudioProvider } from '#/contexts/AudioContext';
 import { fetchSuratDetail } from '#/utils/api';
 import type { Ayat } from '#/types/alquran';
@@ -30,16 +31,57 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedQari, setSelectedQari] = useState('01');
+  
+  // DEBUG: Log qari state changes
+  useEffect(() => {
+    console.log('🔄 [AlquranDetailScreen] Selected qari changed:', {
+      selectedQari,
+      suratId,
+      timestamp: new Date().toISOString()
+    });
+  }, [selectedQari, suratId]);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isQariDrawerOpen, setIsQariDrawerOpen] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(false);
+  const [ayatLoadingStates, setAyatLoadingStates] = useState<Record<number, boolean>>({});
+  const [allAyatLoaded, setAllAyatLoaded] = useState(false);
+
+  // Show all ayat immediately when data is available (not waiting for audio)
+  useEffect(() => {
+    if (suratData?.ayat && suratData.ayat.length > 0) {
+      console.log('✅ [AlquranDetailScreen] Surah data loaded, showing all ayat:', {
+        totalAyat: suratData.ayat.length,
+        timestamp: new Date().toISOString()
+      });
+      // Mark all ayat as loaded immediately when data is available
+      setAllAyatLoaded(true);
+    }
+  }, [suratData?.ayat]);
+
+  // Handle ayat audio loaded (for audio controls, not skeleton)
+  const handleAyatLoaded = (ayatNumber: number) => {
+    console.log('✅ [AlquranDetailScreen] Ayat', ayatNumber, 'audio ready');
+    setAyatLoadingStates(prev => ({
+      ...prev,
+      [ayatNumber]: true
+    }));
+  };
 
   useEffect(() => {
     const loadSuratDetail = async () => {
       try {
         setLoading(true);
+        setAllAyatLoaded(false); // Reset skeleton state
+        console.log('📥 [AlquranDetailScreen] Loading surah data for ID:', suratId);
+        
         const response = await fetchSuratDetail(suratId);
         setSuratData(response.data);
+        
+        console.log('✅ [AlquranDetailScreen] Surah data loaded successfully:', {
+          suratId,
+          ayatCount: response.data?.ayat?.length || 0,
+          timestamp: new Date().toISOString()
+        });
       } catch (err) {
         setError('Gagal memuat detail surat. Silakan coba lagi.');
         console.error('Error loading surat detail:', err);
@@ -54,7 +96,14 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
   }, [suratId]);
 
   const handleQariChange = (qariId: string) => {
+    console.log('🎛️ [AlquranDetailScreen] Qari change requested:', {
+      fromQari: selectedQari,
+      toQari: qariId,
+      suratId,
+      timestamp: new Date().toISOString()
+    });
     setSelectedQari(qariId);
+    console.log('✅ [AlquranDetailScreen] Qari state updated to:', qariId);
   };
 
   // Scroll detection
@@ -167,28 +216,40 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
 
       {/* Daftar Ayat */}
       <div className="space-y-6 pb-32">
-        {suratData.ayat?.map((ayat: Ayat) => (
-          <div key={ayat.nomorAyat} id={`ayat-${ayat.nomorAyat}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all duration-300">
-            {/* Ayat Number Header */}
-            <div className="bg-gradient-to-r from-green-50 to-green-100 px-6 py-3 border-b border-green-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-sm">
-                    <span className="text-white font-bold text-sm">{ayat.nomorAyat}</span>
+        {suratData.ayat?.map((ayat: Ayat) => {
+          // Show skeleton only while waiting for initial data load
+          if (!allAyatLoaded) {
+            return (
+              <AyatLoadingSkeleton 
+                key={ayat.nomorAyat} 
+                ayatNumber={ayat.nomorAyat} 
+              />
+            );
+          }
+          
+          return (
+            <div key={ayat.nomorAyat} id={`ayat-${ayat.nomorAyat}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all duration-300">
+              {/* Ayat Number Header */}
+              <div className="bg-gradient-to-r from-green-50 to-green-100 px-6 py-3 border-b border-green-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-sm">
+                      <span className="text-white font-bold text-sm">{ayat.nomorAyat}</span>
+                    </div>
+                    <span className="text-green-700 font-semibold text-sm">Ayat {ayat.nomorAyat}</span>
                   </div>
-                  <span className="text-green-700 font-semibold text-sm">Ayat {ayat.nomorAyat}</span>
+                  
+                  {/* Audio Player per Ayat */}
+                  {ayat.audio && Object.keys(ayat.audio).length > 0 && (
+                    <AyatAudioPlayer
+                      audioSources={ayat.audio}
+                      ayatNumber={ayat.nomorAyat}
+                      selectedQari={selectedQari}
+                      onAudioLoaded={() => handleAyatLoaded(ayat.nomorAyat)}
+                    />
+                  )}
                 </div>
-                
-                {/* Audio Player per Ayat */}
-                {ayat.audio && Object.keys(ayat.audio).length > 0 && (
-                  <AyatAudioPlayer
-                    audioSources={ayat.audio}
-                    ayatNumber={ayat.nomorAyat}
-                    selectedQari={selectedQari}
-                  />
-                )}
               </div>
-            </div>
             
             <div className="p-6 space-y-6">
               {/* Teks Arab */}
@@ -213,7 +274,8 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
               </div>
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* Floating Action Buttons */}
