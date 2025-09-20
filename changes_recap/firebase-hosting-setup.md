@@ -173,3 +173,4 @@ npm run firebase:serve
    - Track usage and errors
 
 The Qalbyy application is now fully configured for Firebase Hosting deployment with professional-grade static site generation and optimized performance.
+

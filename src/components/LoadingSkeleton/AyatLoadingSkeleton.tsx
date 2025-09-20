@@ -64,3 +64,4 @@ const AyatLoadingSkeleton: React.FC<AyatLoadingSkeletonProps> = ({ ayatNumber })
 };
 
 export default AyatLoadingSkeleton;
+

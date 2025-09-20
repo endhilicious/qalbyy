@@ -39,3 +39,4 @@ export interface Ayat {
   teksIndonesia: string;
   audio: Record<string, string>;
 }
+

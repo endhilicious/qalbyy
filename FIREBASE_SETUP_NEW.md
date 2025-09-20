@@ -65,3 +65,4 @@ Your project is now completely clean and ready for:
 3. Deploy to new Firebase project
 
 The application code and build configuration remain intact - only Firebase account/project associations have been reset.
+
