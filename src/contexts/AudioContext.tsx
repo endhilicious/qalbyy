@@ -10,6 +10,16 @@ interface AudioContextType {
   isReplayEnabled: boolean;
   setIsReplayEnabled: (enabled: boolean) => void;
   replayTimeoutRefs: React.MutableRefObject<Record<string, NodeJS.Timeout | null>>;
+
+  // Sequential playing functionality
+  isSequentialPlaying: boolean;
+  setIsSequentialPlaying: (playing: boolean) => void;
+  sequentialPlaylist: number[];
+  setSequentialPlaylist: (playlist: number[]) => void;
+  currentSequentialIndex: number;
+  setCurrentSequentialIndex: (index: number) => void;
+  onSequentialNext: (() => void) | null;
+  setOnSequentialNext: (callback: (() => void) | null) => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -19,6 +29,12 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [isReplayEnabled, setIsReplayEnabled] = useState(false);
   const audioRefs = useRef<Record<string, HTMLAudioElement | null>>({});
   const replayTimeoutRefs = useRef<Record<string, NodeJS.Timeout | null>>({});
+
+  // Sequential playing state
+  const [isSequentialPlaying, setIsSequentialPlaying] = useState(false);
+  const [sequentialPlaylist, setSequentialPlaylist] = useState<number[]>([]);
+  const [currentSequentialIndex, setCurrentSequentialIndex] = useState(0);
+  const [onSequentialNext, setOnSequentialNext] = useState<(() => void) | null>(null);
 
   const setCurrentPlaying = (id: string | null) => {
     console.log('🎵 [AudioContext] Setting current playing:', {
@@ -63,6 +79,13 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       }
     });
     
+    // Reset sequential playing state when stopping all audio
+    if (isSequentialPlaying) {
+      setIsSequentialPlaying(false);
+      setOnSequentialNext(null);
+      setCurrentSequentialIndex(0);
+    }
+    
     setCurrentPlayingId(null);
   };
 
@@ -75,7 +98,15 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       audioRefs,
       isReplayEnabled,
       setIsReplayEnabled,
-      replayTimeoutRefs
+      replayTimeoutRefs,
+      isSequentialPlaying,
+      setIsSequentialPlaying,
+      sequentialPlaylist,
+      setSequentialPlaylist,
+      currentSequentialIndex,
+      setCurrentSequentialIndex,
+      onSequentialNext,
+      setOnSequentialNext,
     }}>
       {children}
     </AudioContext.Provider>

@@ -1,4 +1,4 @@
-import { BookOpen, ScrollText, Heart, Circle, Clock, Compass, Calendar, Sparkles } from 'lucide-react';
+import { BookOpen, ScrollText, Heart, Circle, Clock, Compass, Calendar, Sparkles, Globe } from 'lucide-react';
 
 // Menu items untuk aplikasi Islam
 export interface MenuItem {
@@ -29,6 +29,16 @@ export const MENU_ITEMS: MenuItem[] = [
     description: 'Doa-doa dalam kehidupan sehari-hari',
     icon: Heart,
     href: '/doa',
+    isEnabled: true,
+    bgGradient: 'from-green-500 to-green-600',
+    iconBg: 'bg-green-100 text-green-700',
+  },
+  {
+    id: 'haji-umroh',
+    title: 'Haji & Umroh',
+    description: 'Paket perjalanan ibadah terpercaya',
+    icon: Globe,
+    href: '/haji-umroh',
     isEnabled: true,
     bgGradient: 'from-green-500 to-green-600',
     iconBg: 'bg-green-100 text-green-700',

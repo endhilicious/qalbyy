@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Volume2, ChevronDown, List, Hash, RotateCcw } from 'lucide-react';
+import { X, Volume2, List, Hash, RotateCcw } from 'lucide-react';
 import { useAudio } from '#/contexts/AudioContext';
+import SearchableDropdown from '#/components/SearchableDropdown';
 
 const QARI_NAMES: Record<string, string> = {
   '01': 'Abdullah Al-Juhany',
@@ -35,9 +36,7 @@ const QariDrawer: React.FC<QariDrawerProps> = ({
   onAyatNavigation,
   suratInfo
 }) => {
-  const [showQariDropdown, setShowQariDropdown] = useState(false);
-  const [showAyatDropdown, setShowAyatDropdown] = useState(false);
-  const { isReplayEnabled, setIsReplayEnabled } = useAudio();
+  const { isReplayEnabled, setIsReplayEnabled, isSequentialPlaying } = useAudio();
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -103,40 +102,23 @@ const QariDrawer: React.FC<QariDrawerProps> = ({
                   <h3 className="text-lg font-semibold text-gray-900">Pilih Qari</h3>
                 </div>
                 
-                <div className="relative">
-                  <button
-                    onClick={() => setShowQariDropdown(!showQariDropdown)}
-                    className="w-full flex items-center justify-between p-4 bg-white border border-gray-300 rounded-lg hover:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
-                  >
-                    <span className="font-medium text-gray-900">{QARI_NAMES[selectedQari]}</span>
-                    <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${showQariDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-                  
-                  {showQariDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                      {Object.entries(QARI_NAMES).map(([id, name]) => (
-                        <button
-                          key={id}
-                          onClick={() => {
-                            onQariChange(id);
-                            setShowQariDropdown(false);
-                            onClose(); // Close the entire drawer
-                          }}
-                          className={`w-full text-left p-3 hover:bg-green-50 transition-colors border-b border-gray-100 last:border-b-0 ${
-                            selectedQari === id ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span>{name}</span>
-                            {selectedQari === id && (
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <SearchableDropdown
+                  items={Object.entries(QARI_NAMES).map(([id, name]) => ({
+                    id,
+                    label: name,
+                    icon: <Volume2 className="w-4 h-4 text-green-600" />
+                  }))}
+                  selectedId={selectedQari}
+                  onSelect={(id) => {
+                    onQariChange(id);
+                    onClose(); // Close the entire drawer
+                  }}
+                  placeholder="Pilih Qari"
+                  searchPlaceholder="Cari qari..."
+                  showSearch={true}
+                  position="left"
+                  className="bg-white border border-gray-300 rounded-lg"
+                />
               </div>
 
               {/* Ayat Navigation Dropdown */}
@@ -147,41 +129,28 @@ const QariDrawer: React.FC<QariDrawerProps> = ({
                     <h3 className="text-lg font-semibold text-gray-900">Pilih Ayat</h3>
                   </div>
                   
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowAyatDropdown(!showAyatDropdown)}
-                      className="w-full flex items-center justify-between p-4 bg-white border border-gray-300 rounded-lg hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    >
-                      <span className="font-medium text-gray-900">Pilih Ayat (1 - {suratInfo.jumlahAyat})</span>
-                      <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${showAyatDropdown ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {showAyatDropdown && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
-                        <div className="p-2 border-b border-gray-200">
-                          <p className="text-sm text-gray-600 text-center">Scroll untuk melihat semua ayat</p>
+                  <SearchableDropdown
+                    items={Array.from({ length: suratInfo.jumlahAyat }, (_, i) => i + 1).map((ayatNumber) => ({
+                      id: ayatNumber.toString(),
+                      label: `Ayat ${ayatNumber}`,
+                      extra: (
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-600">{ayatNumber}</span>
                         </div>
-                        {Array.from({ length: suratInfo.jumlahAyat }, (_, i) => i + 1).map((ayatNumber) => (
-                          <button
-                            key={ayatNumber}
-                            onClick={() => {
-                              onAyatNavigation?.(ayatNumber);
-                              setShowAyatDropdown(false);
-                              onClose(); // Close drawer after navigation
-                            }}
-                            className="w-full text-left p-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 text-gray-700 hover:text-blue-700"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">Ayat {ayatNumber}</span>
-                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <span className="text-xs font-bold text-blue-600">{ayatNumber}</span>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                      )
+                    }))}
+                    selectedId=""
+                    onSelect={(id) => {
+                      onAyatNavigation?.(parseInt(id));
+                      onClose(); // Close drawer after navigation
+                    }}
+                    placeholder={`Pilih Ayat (1 - ${suratInfo.jumlahAyat})`}
+                    searchPlaceholder="Cari nomor ayat..."
+                    showSearch={true}
+                    position="left"
+                    maxHeight="20rem"
+                    className="bg-white border border-gray-300 rounded-lg"
+                  />
                 </div>
               )}
 
@@ -197,25 +166,42 @@ const QariDrawer: React.FC<QariDrawerProps> = ({
                     <div className="flex-1">
                       <p className="text-gray-900 font-medium">Auto Replay</p>
                       <p className="text-gray-600 text-sm mt-1">
-                        Audio akan otomatis terulang setelah selesai dengan jeda 3 detik
+                        {isSequentialPlaying 
+                          ? 'Dinonaktifkan saat mode per ayat aktif' 
+                          : 'Audio akan otomatis terulang setelah selesai dengan jeda 3 detik'
+                        }
                       </p>
                     </div>
                     <div className="ml-4">
                       <button
                         onClick={() => setIsReplayEnabled(!isReplayEnabled)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                          isReplayEnabled ? 'bg-green-600' : 'bg-gray-300'
+                        disabled={isSequentialPlaying}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          isReplayEnabled && !isSequentialPlaying ? 'bg-green-600' : 'bg-gray-300'
                         }`}
-                        aria-pressed={isReplayEnabled}
+                        aria-pressed={isReplayEnabled && !isSequentialPlaying}
                       >
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            isReplayEnabled ? 'translate-x-6' : 'translate-x-1'
+                            isReplayEnabled && !isSequentialPlaying ? 'translate-x-6' : 'translate-x-1'
                           }`}
                         />
                       </button>
                     </div>
                   </div>
+                  
+                  {/* Sequential Play Status */}
+                  {isSequentialPlaying && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-200">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        <p className="text-blue-700 text-sm font-medium">Mode per ayat aktif</p>
+                      </div>
+                      <p className="text-blue-600 text-xs">
+                        Gunakan tombol stop merah di kanan bawah untuk menghentikan pemutaran berurutan
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

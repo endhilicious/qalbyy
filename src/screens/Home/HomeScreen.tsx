@@ -1,9 +1,32 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Layout from '#/components/Layout';
 import MenuCard from '#/components/MenuCard';
 import { MENU_ITEMS } from '#/constants/menu';
+import AppLoading from '#/components/AppLoading';
 
 const HomeScreen: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading tanpa progress bar
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2500); // Loading selama 2.5 detik
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <AppLoading
+        isLoading={true}
+        message="Menyiapkan Qalbyy untuk Anda..."
+      />
+    );
+  }
+
   return (
     <Layout>
       

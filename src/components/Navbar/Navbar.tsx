@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Menu, Home, BookOpen, Heart } from 'lucide-react';
 import { useSidebar } from '#/contexts/SidebarContext';
 import { useRouter, usePathname } from 'next/navigation';
@@ -67,8 +68,15 @@ export default function Navbar({ surahTitle, currentSurahId }: NavbarProps = {})
 
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
-                <BookOpen className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 relative">
+                <Image
+                  src="/Qalbyy-logo-white.png"
+                  alt="Qalbyy Logo"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-contain bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-1 shadow-md"
+                  priority
+                />
               </div>
               <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-gray-900">Qalbyy</h1>

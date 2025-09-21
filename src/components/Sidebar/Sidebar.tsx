@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
 import { 
   Home, 
   BookOpen, 
@@ -59,28 +60,47 @@ export default function Sidebar() {
     setIsMobileOpen(false);
   }, [pathname, setIsMobileOpen]);
 
+  // Prevent body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to restore scroll when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileOpen]);
+
   return (
     <>
 
       {/* Mobile Overlay */}
-      {isMobileOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-          onClick={toggleMobile}
-        />
-      )}
+      <div className={`
+        lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-all duration-300 ease-in-out
+        ${isMobileOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}
+      `} onClick={toggleMobile} />
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 bg-gradient-to-b from-white to-green-50/30 shadow-xl transform transition-all duration-300 ease-in-out flex flex-col
+        fixed inset-y-0 left-0 z-50 bg-white shadow-xl transform transition-all duration-300 ease-out flex flex-col
         ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0'}
         ${isDesktopMinimized ? 'lg:w-16' : 'lg:w-64'}
       `}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 lg:p-6 border-b border-green-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
-              <BookOpen className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 relative">
+              <Image
+                src="/Qalbyy-logo-white.png"
+                alt="Qalbyy Logo"
+                width={48}
+                height={48}
+                className="w-full h-full object-contain bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-1 shadow-md"
+                priority
+              />
             </div>
             {!isDesktopMinimized && (
               <div className="transition-opacity duration-300">

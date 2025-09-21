@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Play, Pause, Volume2, VolumeX, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, RotateCcw, List } from 'lucide-react';
 import { getBestAudioUrl, getAudioLoadingStrategy } from '#/utils/audioUtils';
 import { useAudio } from '#/contexts/AudioContext';
+import SearchableDropdown, { DropdownItem } from '#/components/SearchableDropdown';
 
 interface AudioPlayerProps {
   audioSources: Record<string, string>;
@@ -13,6 +14,8 @@ interface AudioPlayerProps {
   className?: string;
   onQariChange?: (qariId: string) => void;
   defaultQari?: string;
+  totalAyat?: number;
+  onStartSequentialPlay?: () => void;
 }
 
 const QARI_NAMES: Record<string, string> = {
@@ -30,7 +33,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   autoPlay = false,
   className = '',
   onQariChange,
-  defaultQari = '01'
+  defaultQari = '05',
+  totalAyat,
+  onStartSequentialPlay
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -39,13 +44,21 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [loading, setLoading] = useState(false);
   const [selectedQari, setSelectedQari] = useState(defaultQari);
-  const [showQariList, setShowQariList] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   
   // Use global audio context
-  const { currentPlayingId, setCurrentPlaying, audioRefs, isReplayEnabled, replayTimeoutRefs } = useAudio();
+  const { 
+    currentPlayingId, 
+    setCurrentPlaying, 
+    audioRefs, 
+    isReplayEnabled, 
+    replayTimeoutRefs,
+    isSequentialPlaying,
+    setIsSequentialPlaying,
+    setIsReplayEnabled
+  } = useAudio();
   const audioId = 'full-surat-player';
 
   // Memoize audio URL to prevent infinite re-renders
@@ -469,7 +482,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
     
     setSelectedQari(qariId);
-    setShowQariList(false);
     setCurrentTime(0);
     setDuration(0);
     
@@ -483,6 +495,16 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       }, 100);
     }
   }, [isPlaying, onQariChange, setCurrentPlaying, selectedQari]);
+
+  const handleStartSequentialPlay = () => {
+    // Disable replay when starting sequential play
+    if (isReplayEnabled) {
+      setIsReplayEnabled(false);
+    }
+    
+    setIsSequentialPlaying(true);
+    onStartSequentialPlay?.();
+  };
 
   const formatTime = (time: number): string => {
     if (isNaN(time)) return '0:00';
@@ -517,42 +539,34 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         playsInline={true}
       />
 
+      {/* Section Header for Full Audio */}
+      <div className="px-6 py-2 bg-gray-50 border-t border-gray-200">
+        <div className="flex items-center space-x-2">
+          <Volume2 className="w-4 h-4 text-green-600" />
+          <h3 className="text-sm font-semibold text-gray-700">Audio Surat Lengkap</h3>
+          <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full border">Satu file audio</span>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">Dengarkan keseluruhan surat dalam satu audio utuh</p>
+      </div>
+
       {/* Player Controls */}
       <div className="p-6 space-y-4">
         {/* Qari Selection */}
         <div className="space-y-2">
-          <button
-            onClick={() => setShowQariList(!showQariList)}
-            className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <div className="text-left">
-              <p className="text-sm text-gray-500">Qari</p>
-              <p className="font-semibold text-gray-900">{QARI_NAMES[selectedQari]}</p>
-            </div>
-            {showQariList ? (
-              <ChevronUp className="w-5 h-5 text-gray-400" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
-            )}
-          </button>
-
-          {showQariList && (
-            <div className="bg-gray-50 rounded-lg p-2 space-y-1">
-              {Object.entries(QARI_NAMES).map(([id, name]) => (
-                <button
-                  key={id}
-                  onClick={() => handleQariChange(id)}
-                  className={`w-full text-left p-3 rounded-md transition-colors ${
-                    selectedQari === id
-                      ? 'bg-green-100 text-green-700 font-semibold'
-                      : 'hover:bg-white text-gray-700'
-                  }`}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-          )}
+          <p className="text-sm text-gray-500 font-medium">Qari</p>
+          <SearchableDropdown
+            items={Object.entries(QARI_NAMES).map(([id, name]) => ({
+              id,
+              label: name,
+              icon: <Volume2 className="w-4 h-4 text-green-600" />
+            }))}
+            selectedId={selectedQari}
+            onSelect={handleQariChange}
+            placeholder="Pilih Qari"
+            searchPlaceholder="Cari qari..."
+            showSearch={false}
+            position="left"
+          />
         </div>
 
         {/* Progress Bar */}
@@ -588,7 +602,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
           <button
             onClick={handlePlay}
-            disabled={loading || !currentAudioUrl}
+            disabled={loading || !currentAudioUrl || isSequentialPlaying}
             className="w-14 h-14 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
@@ -621,6 +635,48 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
           </div>
         )}
       </div>
+
+      {/* Clear Separator Between Full Audio and Per-Verse Mode */}
+      {totalAyat && totalAyat > 1 && (
+        <>
+          {/* Visual Separator */}
+          <div className="border-t-4 border-gray-300 mx-6"></div>
+          
+          {/* Per-Verse Section Header */}
+          <div className="px-6 py-3 bg-blue-50 border-b border-blue-200">
+            <div className="flex items-center space-x-2">
+              <Play className="w-4 h-4 text-blue-600" />
+              <h3 className="text-sm font-semibold text-blue-700">Mode Per Ayat Berurutan</h3>
+              <span className="text-xs text-blue-500 bg-white px-2 py-1 rounded-full border border-blue-300">Alternatif</span>
+            </div>
+            <p className="text-xs text-blue-600 mt-1">Putar setiap ayat secara berurutan dengan scroll otomatis</p>
+          </div>
+
+          {/* Sequential Play Button */}
+          <div className="px-6 py-4">
+            <button
+              onClick={handleStartSequentialPlay}
+              disabled={loading || !currentAudioUrl || isSequentialPlaying}
+              className={`w-full flex items-center justify-center space-x-2 p-4 rounded-lg font-medium transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ${
+                isSequentialPlaying 
+                  ? 'bg-gradient-to-r from-green-600 to-green-700 text-white border border-green-700' 
+                  : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
+              }`}
+            >
+               <Play className="w-5 h-5" />
+               <span>
+                 {isSequentialPlaying ? 'Mode per ayat aktif' : 'Mulai putar per ayat berurutan'}
+               </span>
+            </button>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              {isSequentialPlaying 
+                ? 'Gunakan tombol stop merah di kanan bawah untuk menghentikan' 
+                : 'Audio akan berpindah otomatis dari ayat 1 hingga terakhir'
+              }
+            </p>
+          </div>
+        </>
+      )}
 
       <style jsx>{`
         .slider::-webkit-slider-thumb {

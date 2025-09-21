@@ -16,7 +16,7 @@ interface AyatAudioPlayerProps {
 const AyatAudioPlayer: React.FC<AyatAudioPlayerProps> = ({
   audioSources,
   ayatNumber,
-  selectedQari = '01',
+  selectedQari = '05',
   className = '',
   onAudioLoaded
 }) => {
@@ -27,7 +27,15 @@ const AyatAudioPlayer: React.FC<AyatAudioPlayerProps> = ({
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   
-  const { currentPlayingId, setCurrentPlaying, audioRefs, isReplayEnabled, replayTimeoutRefs } = useAudio();
+  const { 
+    currentPlayingId, 
+    setCurrentPlaying, 
+    audioRefs, 
+    isReplayEnabled, 
+    replayTimeoutRefs,
+    isSequentialPlaying,
+    onSequentialNext
+  } = useAudio();
   const audioId = `ayat-${ayatNumber}`;
   
   // Register this audio element
@@ -137,11 +145,22 @@ const AyatAudioPlayer: React.FC<AyatAudioPlayerProps> = ({
     const handleEnded = () => {
       console.log('🏁 [AyatAudioPlayer] Audio ended for Ayat', ayatNumber, ':', {
         isReplayEnabled,
+        isSequentialPlaying,
         audioId,
         timestamp: new Date().toISOString()
       });
       
-      if (isReplayEnabled) {
+      // Handle sequential playing first
+      if (isSequentialPlaying && onSequentialNext) {
+        console.log('🔄 [AyatAudioPlayer] Triggering sequential next for Ayat', ayatNumber);
+        setCurrentPlaying(null);
+        setTimeout(() => {
+          onSequentialNext();
+        }, 1000); // 1 second delay before next ayat
+        return;
+      }
+      
+      if (isReplayEnabled && !isSequentialPlaying) {
         console.log('🔄 [AyatAudioPlayer] Setting up replay after 3 seconds for Ayat', ayatNumber);
         // Clear any existing timeout for this audio
         const existingTimeout = replayTimeoutRefs.current[audioId];

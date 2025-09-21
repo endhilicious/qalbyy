@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '#/components/Layout';
 import LoadingSpinner from '#/components/LoadingSpinner';
 import AudioPlayer, { AyatAudioPlayer } from '#/components/AudioPlayer';
@@ -8,7 +8,7 @@ import FloatingActionButtons from '#/components/FloatingActionButtons';
 import QariDrawer from '#/components/QariDrawer';
 import SurahNavigation from '#/components/SurahNavigation';
 import { AyatLoadingSkeleton } from '#/components/LoadingSkeleton';
-import { AudioProvider } from '#/contexts/AudioContext';
+import { AudioProvider, useAudio } from '#/contexts/AudioContext';
 import { fetchSuratDetail } from '#/utils/api';
 import type { Ayat } from '#/types/alquran';
 
@@ -16,7 +16,17 @@ interface AlquranDetailScreenProps {
   suratId: number;
 }
 
-const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) => {
+const AlquranDetailContent: React.FC<AlquranDetailScreenProps> = ({ suratId }) => {
+  const { 
+    currentPlayingId, 
+    isSequentialPlaying, 
+    setIsSequentialPlaying,
+    setSequentialPlaylist,
+    setCurrentSequentialIndex,
+    setOnSequentialNext,
+    setIsReplayEnabled,
+    stopAllAudio
+  } = useAudio();
   const [suratData, setSuratData] = useState<{
     nomor: number;
     nama: string;
@@ -30,16 +40,8 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedQari, setSelectedQari] = useState('01');
+  const [selectedQari, setSelectedQari] = useState('05');
   
-  // DEBUG: Log qari state changes
-  useEffect(() => {
-    console.log('🔄 [AlquranDetailScreen] Selected qari changed:', {
-      selectedQari,
-      suratId,
-      timestamp: new Date().toISOString()
-    });
-  }, [selectedQari, suratId]);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isQariDrawerOpen, setIsQariDrawerOpen] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(false);
@@ -49,10 +51,6 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
   // Show all ayat immediately when data is available (not waiting for audio)
   useEffect(() => {
     if (suratData?.ayat && suratData.ayat.length > 0) {
-      console.log('✅ [AlquranDetailScreen] Surah data loaded, showing all ayat:', {
-        totalAyat: suratData.ayat.length,
-        timestamp: new Date().toISOString()
-      });
       // Mark all ayat as loaded immediately when data is available
       setAllAyatLoaded(true);
     }
@@ -60,7 +58,6 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
 
   // Handle ayat audio loaded (for audio controls, not skeleton)
   const handleAyatLoaded = (ayatNumber: number) => {
-    console.log('✅ [AlquranDetailScreen] Ayat', ayatNumber, 'audio ready');
     setAyatLoadingStates(prev => ({
       ...prev,
       [ayatNumber]: true
@@ -72,16 +69,9 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
       try {
         setLoading(true);
         setAllAyatLoaded(false); // Reset skeleton state
-        console.log('📥 [AlquranDetailScreen] Loading surah data for ID:', suratId);
         
         const response = await fetchSuratDetail(suratId);
         setSuratData(response.data);
-        
-        console.log('✅ [AlquranDetailScreen] Surah data loaded successfully:', {
-          suratId,
-          ayatCount: response.data?.ayat?.length || 0,
-          timestamp: new Date().toISOString()
-        });
       } catch (err) {
         setError('Gagal memuat detail surat. Silakan coba lagi.');
         console.error('Error loading surat detail:', err);
@@ -96,14 +86,7 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
   }, [suratId]);
 
   const handleQariChange = (qariId: string) => {
-    console.log('🎛️ [AlquranDetailScreen] Qari change requested:', {
-      fromQari: selectedQari,
-      toQari: qariId,
-      suratId,
-      timestamp: new Date().toISOString()
-    });
     setSelectedQari(qariId);
-    console.log('✅ [AlquranDetailScreen] Qari state updated to:', qariId);
   };
 
   // Scroll detection
@@ -132,14 +115,28 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
     setIsQariDrawerOpen(!isQariDrawerOpen);
   };
 
-  const handleAyatNavigation = (ayatNumber: number) => {
+  const handleAyatNavigation = (ayatNumber: number, forceScroll: boolean = false) => {
     const ayatElement = document.getElementById(`ayat-${ayatNumber}`);
     if (ayatElement) {
-      ayatElement.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'center',
-        inline: 'nearest'
-      });
+      if (forceScroll) {
+        // For sequential play, force scroll to top of viewport
+        const elementTop = ayatElement.offsetTop;
+        const headerOffset = 80; // Account for header
+        
+        window.scrollTo({
+          top: elementTop - headerOffset,
+          behavior: 'smooth'
+        });
+        
+      } else {
+        // Normal navigation
+        ayatElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'nearest'
+        });
+      }
+      
       // Add a subtle highlight effect
       ayatElement.classList.add('ring-2', 'ring-blue-400', 'ring-opacity-75');
       setTimeout(() => {
@@ -147,6 +144,77 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
       }, 2000);
     }
   };
+
+  const handleStartSequentialPlay = useCallback(() => {
+    if (!suratData?.ayat) return;
+    
+    // Disable replay when starting sequential play
+    setIsReplayEnabled(false);
+    
+    // Set up playlist and start from first ayat
+    const playlist = suratData.ayat.map(ayat => ayat.nomorAyat);
+    setSequentialPlaylist(playlist);
+    let currentIndex = 0;
+    setCurrentSequentialIndex(currentIndex);
+    setIsSequentialPlaying(true);
+    
+    // Set up the sequential next callback
+    setOnSequentialNext(() => () => {
+      currentIndex += 1;
+      if (currentIndex < playlist.length) {
+          // Navigate to next ayat
+          const nextAyatNumber = playlist[currentIndex];
+          setCurrentSequentialIndex(currentIndex);
+          handleAyatNavigation(nextAyatNumber, true); // Force scroll for sequential
+        
+        // Play the next ayat audio
+        setTimeout(() => {
+          const nextAyatAudioButton = document.querySelector(`#ayat-${nextAyatNumber} button[aria-label*="Play ayat ${nextAyatNumber}"]`) as HTMLButtonElement;
+          if (nextAyatAudioButton) {
+            nextAyatAudioButton.click();
+          }
+        }, 500); // Small delay to ensure smooth scrolling completes
+      } else {
+        // End of playlist
+        setIsSequentialPlaying(false);
+        setOnSequentialNext(null);
+        setCurrentSequentialIndex(0);
+      }
+    });
+    
+    // SPECIAL HANDLING: Force scroll to first ayat ONLY (not affecting other ayat scrolling)
+    console.log(`🚀 Starting sequential play, forcing scroll to first ayat: ${playlist[0]}`);
+    
+    // Direct immediate scroll to top for first ayat only
+    const firstAyatElement = document.getElementById(`ayat-${playlist[0]}`);
+    if (firstAyatElement) {
+      // Method 1: Scroll to very top of document first
+      window.scrollTo({
+        top: 0,
+        behavior: 'auto'
+      });
+      
+      // Method 2: Then scroll to first ayat position
+      setTimeout(() => {
+        const elementTop = firstAyatElement.offsetTop;
+        window.scrollTo({
+          top: Math.max(0, elementTop - 80),
+          behavior: 'smooth'
+        });
+        console.log(`🎯 Scrolled to first ayat position: ${elementTop - 80}`);
+      }, 100);
+    }
+    
+    setTimeout(() => {
+      const firstAyatAudioButton = document.querySelector(`#ayat-${playlist[0]} button[aria-label*="Play ayat ${playlist[0]}"]`) as HTMLButtonElement;
+      if (firstAyatAudioButton) {
+        console.log(`▶️ Starting audio for first ayat: ${playlist[0]}`);
+        firstAyatAudioButton.click();
+      } else {
+        console.log(`❌ Could not find audio button for ayat ${playlist[0]}`);
+      }
+    }, 800);
+  }, [suratData, setIsReplayEnabled, setSequentialPlaylist, setCurrentSequentialIndex, setIsSequentialPlaying, setOnSequentialNext, handleAyatNavigation]);
 
   if (loading) {
     return (
@@ -179,8 +247,7 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
   }
 
   return (
-    <AudioProvider>
-      <Layout surahTitle={suratData?.namaLatin} currentSurahId={suratId}>
+    <Layout surahTitle={suratData?.namaLatin} currentSurahId={suratId}>
         
         {/* Header Surat */}
       <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-6 mb-6 text-white shadow-lg">
@@ -203,13 +270,17 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
 
       {/* Audio Player Surat Lengkap */}
       {suratData.audioFull && Object.keys(suratData.audioFull).length > 0 && (
-        <div className="mb-6">
+        <div className={`mb-6 rounded-xl transition-all duration-300 ${
+          currentPlayingId === 'full-surat-player' ? 'bg-green-50 p-1' : ''
+        }`}>
           <AudioPlayer
             audioSources={suratData.audioFull}
             title={`Audio Surat ${suratData.namaLatin}`}
             subtitle="Dengarkan surat lengkap"
             onQariChange={handleQariChange}
             defaultQari={selectedQari}
+            totalAyat={suratData.jumlahAyat}
+            onStartSequentialPlay={handleStartSequentialPlay}
           />
         </div>
       )}
@@ -228,7 +299,9 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
           }
           
           return (
-            <div key={ayat.nomorAyat} id={`ayat-${ayat.nomorAyat}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all duration-300">
+            <div key={ayat.nomorAyat} id={`ayat-${ayat.nomorAyat}`} className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all duration-300 ${
+              currentPlayingId === `ayat-${ayat.nomorAyat}` ? 'bg-green-50 border-green-300 shadow-md' : ''
+            }`}>
               {/* Ayat Number Header */}
               <div className="bg-gradient-to-r from-green-50 to-green-100 px-6 py-3 border-b border-green-200">
                 <div className="flex items-center justify-between">
@@ -254,7 +327,9 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
             <div className="p-6 space-y-6">
               {/* Teks Arab */}
               <div className="text-right">
-                <p className="text-3xl leading-loose text-gray-900 font-arabic">
+                <p className={`text-3xl leading-loose font-arabic transition-colors duration-300 ${
+                  currentPlayingId === `ayat-${ayat.nomorAyat}` ? 'text-green-700' : 'text-gray-900'
+                }`}>
                   {ayat.teksArab}
                 </p>
               </div>
@@ -308,6 +383,13 @@ const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) =>
         } : undefined}
       />
       </Layout>
+  );
+};
+
+const AlquranDetailScreen: React.FC<AlquranDetailScreenProps> = ({ suratId }) => {
+  return (
+    <AudioProvider>
+      <AlquranDetailContent suratId={suratId} />
     </AudioProvider>
   );
 };

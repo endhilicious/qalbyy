@@ -227,3 +227,97 @@ const {
 - Modal instruksi manual untuk iOS
 - Tracking status instalasi
 - UI/UX yang user-friendly
+
+## PremiumLoading
+**Lokasi:** `src/components/PremiumLoading`  
+**Kegunaan:** Premium loading component dengan heartbeat animation dan branding customization  
+**Props:**
+- `message?: string` - Pesan loading (default: 'Memuat...')
+- `size?: 'sm' | 'md' | 'lg' | 'xl'` - Ukuran komponen (default: 'lg')
+- `className?: string` - CSS class tambahan
+- `fullscreen?: boolean` - Tampilkan sebagai fullscreen overlay (default: true)
+- `showProgress?: boolean` - Tampilkan progress bar (default: false)
+- `progress?: number` - Persentase progress (0-100)
+- `logo?: string` - URL logo
+- `logoAlt?: string` - Alt text untuk logo (default: 'Logo')
+- `primaryColor?: string` - Warna brand utama (default: 'green')
+- `secondaryColor?: string` - Warna brand sekunder (default: 'emerald')
+- `subMessage?: string` - Pesan loading tambahan (default: 'Mohon tunggu sebentar...')
+
+**Design Features:**
+- Heartbeat animation dengan multiple layers
+- Dynamic branding dengan warna customizable
+- Multiple sizes (sm, md, lg, xl)
+- Progress bar dengan smooth transitions
+- Fullscreen overlay atau inline component
+- Responsive design untuk semua ukuran layar
+- Accessibility dengan ARIA labels
+- 5 color schemes predefined (blue, amber, green, purple, red)
+
+**Contoh Penggunaan:**
+```tsx
+// Basic usage
+<PremiumLoading />
+
+// Dengan custom branding
+<PremiumLoading
+  message="Selamat Datang di Qalbyy"
+  subMessage="Menyiapkan pengalaman terbaik untuk Anda..."
+  logo="/Qalbyy-logo-black.png"
+  logoAlt="Qalbyy"
+  primaryColor="green"
+  secondaryColor="emerald"
+  size="xl"
+/>
+
+// Dengan progress bar
+<PremiumLoading
+  message="Memuat data..."
+  showProgress={true}
+  progress={progress}
+  primaryColor="green"
+/>
+
+// Inline loading (tidak fullscreen)
+<PremiumLoading
+  fullscreen={false}
+  message="Memproses..."
+  primaryColor="green"
+  size="md"
+/>
+```
+
+## AppLoading
+**Lokasi:** `src/components/AppLoading`  
+**Kegunaan:** Wrapper untuk PremiumLoading dengan konfigurasi default Qalbyy branding  
+**Props:**
+- `isLoading: boolean` - Status loading (required)
+- `message?: string` - Pesan loading (default: 'Memuat aplikasi...')
+- `progress?: number` - Persentase progress (0-100)
+- `showProgress?: boolean` - Tampilkan progress bar (default: false)
+
+**Design Features:**
+- Pre-configured dengan branding Qalbyy (logo hijau)
+- Easy-to-use wrapper untuk implementasi cepat
+- Progress bar support
+- Auto-hide saat loading selesai
+
+**Contoh Penggunaan:**
+```tsx
+// Basic usage dengan progress
+const [isLoading, setIsLoading] = useState(true);
+const [progress, setProgress] = useState(0);
+
+<AppLoading
+  isLoading={isLoading}
+  message="Menyiapkan Qalbyy untuk Anda..."
+  progress={progress}
+  showProgress={true}
+/>
+
+// Simple loading tanpa progress
+<AppLoading
+  isLoading={isLoading}
+  message="Memuat data..."
+/>
+```

@@ -1,0 +1,470 @@
+# Premium Loading Component - MDC Documentation
+
+## Overview
+A premium, elegant loading component with heartbeat-style animation that creates a professional and polished user experience. This component is designed to be completely generic and reusable across any project with customizable branding colors and logo.
+
+## Features
+- **Heartbeat Animation**: Elegant pulsing animation with multiple layers
+- **Dynamic Branding**: Customizable colors and logo via props
+- **Multiple Sizes**: Small, medium, large, and extra-large variants
+- **Progress Bar**: Optional progress indicator with smooth transitions
+- **Fullscreen Overlay**: Can be used as fullscreen loading or inline component
+- **Responsive Design**: Works perfectly on all screen sizes
+- **Accessibility**: Proper ARIA labels and semantic HTML
+
+## Component Code
+
+```tsx
+'use client';
+
+import React from 'react';
+import Image from 'next/image';
+
+export interface PremiumLoadingProps {
+  /** Loading message */
+  message?: string;
+  /** Size of the loading component */
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** Custom className */
+  className?: string;
+  /** Whether to show the fullscreen overlay */
+  fullscreen?: boolean;
+  /** Whether to show progress bar */
+  showProgress?: boolean;
+  /** Progress percentage (0-100) */
+  progress?: number;
+  /** Logo source URL */
+  logo?: string;
+  /** Alt text for logo */
+  logoAlt?: string;
+  /** Primary brand color */
+  primaryColor?: string;
+  /** Secondary brand color */
+  secondaryColor?: string;
+  /** Additional loading text */
+  subMessage?: string;
+}
+
+/**
+ * PremiumLoading Component
+ * 
+ * A modern loading component with heartbeat-style animation.
+ * Designed to be completely customizable with brand colors and logo.
+ * 
+ * @param message - Loading message to display
+ * @param size - Size of the loading component
+ * @param className - Additional CSS classes
+ * @param fullscreen - Whether to show fullscreen overlay
+ * @param showProgress - Whether to show progress bar
+ * @param progress - Progress percentage (0-100)
+ * @param logo - Logo source URL
+ * @param logoAlt - Alt text for logo
+ * @param primaryColor - Primary brand color
+ * @param secondaryColor - Secondary brand color
+ * @param subMessage - Additional loading text
+ */
+export function PremiumLoading({
+  message = 'Loading...',
+  size = 'lg',
+  className = '',
+  fullscreen = true,
+  showProgress = false,
+  progress = 0,
+  logo,
+  logoAlt = 'Logo',
+  primaryColor = 'blue',
+  secondaryColor = 'indigo',
+  subMessage = 'Please wait...'
+}: PremiumLoadingProps) {
+  const sizeClasses = {
+    sm: 'w-12 h-12',
+    md: 'w-16 h-16',
+    lg: 'w-20 h-20',
+    xl: 'w-24 h-24'
+  };
+
+  const textSizeClasses = {
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg',
+    xl: 'text-xl'
+  };
+
+  const logoSize = {
+    sm: 24,
+    md: 32,
+    lg: 40,
+    xl: 48
+  };
+
+  // Color mapping for Tailwind classes
+  const colorClasses = {
+    blue: {
+      primary: 'blue',
+      secondary: 'indigo',
+      ring: 'blue-200',
+      ringInner: 'blue-300',
+      gradientFrom: 'blue-50',
+      gradientTo: 'indigo-50',
+      dots: 'blue-400',
+      dotsSecondary: 'indigo-400',
+      text: 'blue-600',
+      textSecondary: 'indigo-600',
+      progress: 'blue-500',
+      progressSecondary: 'indigo-500'
+    },
+    amber: {
+      primary: 'amber',
+      secondary: 'yellow',
+      ring: 'amber-200',
+      ringInner: 'amber-300',
+      gradientFrom: 'amber-50',
+      gradientTo: 'yellow-50',
+      dots: 'amber-400',
+      dotsSecondary: 'yellow-400',
+      text: 'amber-600',
+      textSecondary: 'yellow-600',
+      progress: 'amber-500',
+      progressSecondary: 'yellow-500'
+    },
+    green: {
+      primary: 'green',
+      secondary: 'emerald',
+      ring: 'green-200',
+      ringInner: 'green-300',
+      gradientFrom: 'green-50',
+      gradientTo: 'emerald-50',
+      dots: 'green-400',
+      dotsSecondary: 'emerald-400',
+      text: 'green-600',
+      textSecondary: 'emerald-600',
+      progress: 'green-500',
+      progressSecondary: 'emerald-500'
+    },
+    purple: {
+      primary: 'purple',
+      secondary: 'violet',
+      ring: 'purple-200',
+      ringInner: 'purple-300',
+      gradientFrom: 'purple-50',
+      gradientTo: 'violet-50',
+      dots: 'purple-400',
+      dotsSecondary: 'violet-400',
+      text: 'purple-600',
+      textSecondary: 'violet-600',
+      progress: 'purple-500',
+      progressSecondary: 'violet-500'
+    },
+    red: {
+      primary: 'red',
+      secondary: 'rose',
+      ring: 'red-200',
+      ringInner: 'red-300',
+      gradientFrom: 'red-50',
+      gradientTo: 'rose-50',
+      dots: 'red-400',
+      dotsSecondary: 'rose-400',
+      text: 'red-600',
+      textSecondary: 'rose-600',
+      progress: 'red-500',
+      progressSecondary: 'rose-500'
+    }
+  };
+
+  const colors = colorClasses[primaryColor as keyof typeof colorClasses] || colorClasses.blue;
+
+  const LoadingContent = () => (
+    <div className="flex flex-col items-center space-y-6">
+      {/* Logo with Heartbeat Animation */}
+      <div className="relative">
+        {/* Outer pulsing ring */}
+        <div className={`${sizeClasses[size]} absolute inset-0 rounded-full border-2 border-${colors.ring} animate-ping opacity-75`}></div>
+        
+        {/* Inner pulsing ring */}
+        <div className={`${sizeClasses[size]} absolute inset-2 rounded-full border border-${colors.ringInner} animate-pulse`}></div>
+        
+        {/* Logo container with heartbeat animation */}
+        <div className={`${sizeClasses[size]} relative flex items-center justify-center bg-gradient-to-br from-${colors.gradientFrom} to-${colors.gradientTo} rounded-full shadow-lg animate-heartbeat`}>
+          {logo ? (
+            <Image
+              src={logo}
+              alt={logoAlt}
+              width={logoSize[size]}
+              height={logoSize[size]}
+              className="w-full h-full object-contain p-2"
+              priority
+            />
+          ) : (
+            <div className={`${textSizeClasses[size]} font-bold text-${colors.text}`}>
+              {logoAlt.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
+        
+        {/* Animated dots around logo */}
+        <div className="absolute inset-0">
+          <div className={`absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-2 h-2 bg-${colors.dots} rounded-full animate-ping`} style={{ animationDelay: '0s' }}></div>
+          <div className={`absolute top-1/4 right-0 transform translate-x-1 w-1.5 h-1.5 bg-${colors.dotsSecondary} rounded-full animate-ping`} style={{ animationDelay: '0.5s' }}></div>
+          <div className={`absolute bottom-1/4 left-0 transform -translate-x-1 w-1.5 h-1.5 bg-${colors.dots} rounded-full animate-ping`} style={{ animationDelay: '1s' }}></div>
+          <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 w-2 h-2 bg-${colors.dotsSecondary} rounded-full animate-ping`} style={{ animationDelay: '1.5s' }}></div>
+        </div>
+      </div>
+      
+      {/* Loading Text */}
+      <div className="text-center space-y-2">
+        <p className={`${textSizeClasses[size]} font-semibold bg-gradient-to-r from-${colors.text} to-${colors.textSecondary} bg-clip-text text-transparent`}>
+          {message}
+        </p>
+        <p className="text-sm text-gray-500">
+          {subMessage}
+        </p>
+      </div>
+      
+      {/* Progress Bar */}
+      {showProgress && (
+        <div className="w-64 bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div 
+            className={`bg-gradient-to-r from-${colors.progress} to-${colors.progressSecondary} h-2 rounded-full transition-all duration-500 ease-out`}
+            style={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
+          ></div>
+        </div>
+      )}
+      
+      {/* Loading Dots Animation */}
+      <div className="flex space-x-1">
+        <div className={`w-2 h-2 bg-${colors.dots} rounded-full animate-bounce`} style={{ animationDelay: '0ms' }}></div>
+        <div className={`w-2 h-2 bg-${colors.dotsSecondary} rounded-full animate-bounce`} style={{ animationDelay: '150ms' }}></div>
+        <div className={`w-2 h-2 bg-${colors.dots} rounded-full animate-bounce`} style={{ animationDelay: '300ms' }}></div>
+      </div>
+    </div>
+  );
+
+  if (fullscreen) {
+    return (
+      <div className={`fixed inset-0 bg-white z-50 flex items-center justify-center ${className}`}>
+        <LoadingContent />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-center justify-center ${className}`}>
+      <LoadingContent />
+    </div>
+  );
+}
+
+export default PremiumLoading;
+```
+
+## Required CSS Animations
+
+Add these custom animations to your global CSS file (globals.css):
+
+```css
+@keyframes heartbeat {
+  0%, 50%, 100% {
+    transform: scale(1);
+  }
+  25%, 75% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+```
+
+## Installation & Setup
+
+### 1. Create the Component File
+Create `src/components/ui/PremiumLoading.tsx` with the code above.
+
+### 2. Add CSS Animations
+Add the heartbeat animation to your `src/app/globals.css`:
+
+```css
+@keyframes heartbeat {
+  0%, 50%, 100% {
+    transform: scale(1);
+  }
+  25%, 75% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+```
+
+### 3. Tailwind Configuration
+Ensure your `tailwind.config.js` includes the custom animation:
+
+```javascript
+module.exports = {
+  // ... your existing config
+  theme: {
+    extend: {
+      animation: {
+        'heartbeat': 'heartbeat 1.5s ease-in-out infinite',
+      }
+    }
+  }
+}
+```
+
+## Usage Examples
+
+### 1. Basic Usage (Layout Implementation)
+
+**In `src/app/layout.tsx`:**
+```tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import PremiumLoading from '@/components/ui/PremiumLoading';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate app initialization
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <PremiumLoading />;
+  }
+
+  return (
+    <html lang="en">
+      <body>
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+### 2. With Custom Branding
+
+```tsx
+<PremiumLoading
+  message="Welcome to Our App"
+  subMessage="Initializing your experience..."
+  logo="/images/your-logo.png"
+  logoAlt="Your Brand"
+  primaryColor="amber"
+  secondaryColor="yellow"
+  size="xl"
+/>
+```
+
+### 3. With Progress Bar
+
+```tsx
+const [progress, setProgress] = useState(0);
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setProgress(prev => {
+      if (prev >= 100) {
+        clearInterval(interval);
+        return 100;
+      }
+      return prev + 10;
+    });
+  }, 200);
+}, []);
+
+<PremiumLoading
+  message="Loading your data..."
+  showProgress={true}
+  progress={progress}
+  primaryColor="green"
+/>
+```
+
+### 4. Inline Loading (Not Fullscreen)
+
+```tsx
+<div className="min-h-screen flex items-center justify-center">
+  <PremiumLoading
+    fullscreen={false}
+    message="Processing..."
+    primaryColor="purple"
+    size="md"
+  />
+</div>
+```
+
+### 5. Logo-less Implementation (Text Only)
+
+```tsx
+<PremiumLoading
+  message="Loading Application"
+  logoAlt="A"
+  primaryColor="blue"
+  secondaryColor="indigo"
+/>
+```
+
+## Available Color Schemes
+
+The component supports these predefined color schemes:
+
+- **blue** (default) - Blue and Indigo
+- **amber** - Amber and Yellow  
+- **green** - Green and Emerald
+- **purple** - Purple and Violet
+- **red** - Red and Rose
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `message` | string | "Loading..." | Main loading message |
+| `size` | 'sm' \| 'md' \| 'lg' \| 'xl' | 'lg' | Component size |
+| `className` | string | '' | Additional CSS classes |
+| `fullscreen` | boolean | true | Show as fullscreen overlay |
+| `showProgress` | boolean | false | Show progress bar |
+| `progress` | number | 0 | Progress percentage (0-100) |
+| `logo` | string | undefined | Logo image URL |
+| `logoAlt` | string | 'Logo' | Alt text for logo |
+| `primaryColor` | string | 'blue' | Primary brand color |
+| `secondaryColor` | string | 'indigo' | Secondary brand color |
+| `subMessage` | string | 'Please wait...' | Additional loading text |
+
+## Best Practices
+
+1. **Use in Layout**: Implement in your root layout for app-wide loading
+2. **Brand Consistency**: Use your brand colors consistently
+3. **Logo Optimization**: Ensure your logo is optimized for web
+4. **Accessibility**: Always provide meaningful alt text for logos
+5. **Performance**: Use the component sparingly for optimal performance
+6. **Timing**: Keep loading times reasonable (2-3 seconds max)
+
+## Troubleshooting
+
+### Common Issues:
+
+1. **Animation not working**: Ensure CSS animations are added to globals.css
+2. **Colors not applying**: Check that color names match the predefined schemes
+3. **Logo not showing**: Verify the image path is correct and accessible
+4. **Tailwind classes not working**: Ensure Tailwind is properly configured
+
+### Browser Support:
+- Modern browsers (Chrome, Firefox, Safari, Edge)
+- IE11+ with polyfills for CSS animations
+
+This component creates a premium, professional loading experience that elevates your application's perceived quality and user experience.
