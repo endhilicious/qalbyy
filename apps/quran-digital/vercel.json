@@ -1,0 +1,9 @@
+{
+  "buildCommand": "cd ../.. && pnpm -C apps/quran-digital run build",
+  "outputDirectory": "out",
+  "devCommand": "pnpm run dev",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./",
+  "regions": ["sin1"]
+}
