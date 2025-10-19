@@ -1,5 +1,5 @@
 {
-  "name": "qalbyy_new",
+  "name": "new_qalbyy",
   "private": true,
   "scripts": {
     "build": "turbo run build",
