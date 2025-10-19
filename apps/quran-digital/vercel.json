@@ -1,6 +1,6 @@
 {
   "buildCommand": "cd ../.. && pnpm -C apps/quran-digital run build",
-  "outputDirectory": "out",
+  "outputDirectory": ".next",
   "devCommand": "pnpm run dev",
   "installCommand": "pnpm install",
   "framework": "nextjs",

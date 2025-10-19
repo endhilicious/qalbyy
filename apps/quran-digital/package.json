@@ -8,13 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint --max-warnings 0",
-    "check-types": "tsc --noEmit",
-    "build:static": "next build",
-    "deploy": "npm run build:static && firebase deploy",
-    "firebase:init": "firebase init hosting",
-    "firebase:deploy": "npm run deploy",
-    "firebase:serve": "firebase serve --only hosting",
-    "firebase:emulators": "firebase emulators:start --only hosting"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@repo/ui": "workspace:*",

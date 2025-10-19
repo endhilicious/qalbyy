@@ -266,6 +266,7 @@ const DoaDetailScreen: React.FC<DoaDetailScreenProps> = ({ doaId }) => {
         </div>
       </div>
     </>
+  );
 };
 
 export default DoaDetailScreen;
