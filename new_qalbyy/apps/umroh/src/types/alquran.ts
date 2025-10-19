@@ -1,0 +1,42 @@
+// Types untuk API equran.id
+export interface SuratResponse {
+  code: number;
+  message: string;
+  data: Surat[];
+}
+
+export interface Surat {
+  nomor: number;
+  nama: string;
+  namaLatin: string;
+  jumlahAyat: number;
+  tempatTurun: string;
+  arti: string;
+  deskripsi: string;
+  audioFull: Record<string, string>;
+}
+
+export interface AyatResponse {
+  code: number;
+  message: string;
+  data: {
+    nomor: number;
+    nama: string;
+    namaLatin: string;
+    jumlahAyat: number;
+    tempatTurun: string;
+    arti: string;
+    deskripsi: string;
+    audioFull: Record<string, string>;
+    ayat: Ayat[];
+  };
+}
+
+export interface Ayat {
+  nomorAyat: number;
+  teksArab: string;
+  teksLatin: string;
+  teksIndonesia: string;
+  audio: Record<string, string>;
+}
+
