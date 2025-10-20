@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Download, X, Smartphone, Monitor } from 'lucide-react';
+import { Download, X, Smartphone } from 'lucide-react';
 import { Modal } from '@repo/ui';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -17,37 +17,67 @@ interface AddToHomescreenProps {
   className?: string;
 }
 
+const SUPPRESS_KEY = 'a2hs-suppress-until';
+const SUPPRESS_MS = 5 * 60 * 1000; // 5 minutes
+
 const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const setSuppressFor5m = () => {
+    try {
+      sessionStorage.setItem(SUPPRESS_KEY, String(Date.now() + SUPPRESS_MS));
+    } catch {}
+  };
+
+  const isSuppressed = () => {
+    try {
+      const until = sessionStorage.getItem(SUPPRESS_KEY);
+      return until ? parseInt(until, 10) > Date.now() : false;
+    } catch {
+      return false;
+    }
+  };
 
   useEffect(() => {
     // Check if app is already installed (standalone mode)
     const checkStandalone = () => {
-      return window.matchMedia('(display-mode: standalone)').matches ||
-             (window.navigator as any).standalone === true;
+      return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true
+      );
     };
 
     // Check if device is iOS
     const checkIOS = () => {
       const userAgent = navigator.userAgent.toLowerCase();
-      return /iphone|ipad|ipod/.test(userAgent) || 
-             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      return /iphone|ipad|ipod/.test(userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    };
+
+    // Check if mobile browser
+    const checkMobile = () => {
+      const ua = navigator.userAgent || (navigator as any).vendor || (window as any).opera;
+      const isUAOnMobile = /android|iphone|ipad|ipod|iemobile|mobile/i.test(ua);
+      const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      return isUAOnMobile || isCoarsePointer;
     };
 
     setIsStandalone(checkStandalone());
     setIsIOS(checkIOS());
+    setIsMobile(checkMobile());
 
     // Listen for beforeinstallprompt event (Android/Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
-      // Only show install prompt if not already installed and not iOS
-      if (!checkStandalone() && !checkIOS()) {
+
+      // Only show install prompt automatically if mobile, not installed, not iOS, and not suppressed
+      if (!checkStandalone() && !checkIOS() && checkMobile() && !isSuppressed()) {
         setShowInstallPrompt(true);
       }
     };
@@ -57,6 +87,7 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
       setIsInstalled(true);
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
+      setSuppressFor5m(); // prevent re-showing the modal shortly after installation
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -69,38 +100,44 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
   }, []);
 
   const handleInstallClick = async () => {
+    // On iOS, respect suppression and only show instructions if not suppressed
+    if (isIOS) {
+      if (isSuppressed()) return;
+      setShowInstallPrompt(true);
+      return;
+    }
+
     if (deferredPrompt) {
       try {
         await deferredPrompt.prompt();
         const choiceResult = await deferredPrompt.userChoice;
-        
+
         if (choiceResult.outcome === 'accepted') {
           setIsInstalled(true);
         }
-        
+
         setShowInstallPrompt(false);
         setDeferredPrompt(null);
+        setSuppressFor5m(); // clicking install should also suppress future modal for 5 minutes
       } catch (error) {
         console.error('Error installing app:', error);
       }
-    } else if (isIOS) {
-      // Show iOS instructions
-      setShowInstallPrompt(true);
     }
   };
 
   const handleDismiss = () => {
     setShowInstallPrompt(false);
+    setSuppressFor5m(); // suppress modal for 5 minutes after dismiss
   };
 
-  // Don't show if already in standalone mode
-  if (isStandalone) {
+  // Don't render on desktop or if already in standalone mode
+  if (isStandalone || !isMobile) {
     return null;
   }
 
   return (
     <>
-      {/* Install Button */}
+      {/* Install Button (mobile only) */}
       <button
         onClick={handleInstallClick}
         className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors hover:bg-green-50 text-gray-700 hover:text-green-700 ${className}`}
