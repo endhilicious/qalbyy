@@ -1,0 +1,14 @@
+- ICONS MUST USE LUCIDE-REACT. DO NOT USE OTHER ICON LIBRARIES.
+- NEVER CHANGE CODE OUTSIDE PROMPT SCOPE
+- Recap Create YYYY MM DD info md in recapt changes for every change
+- Docs Use JSDoc for all functions Comment complex logic
+- Supabase MD Only update existing queries in docs suppabase docs NO DUPLICATES
+- See detail rules general constraints md and detail rules supabase docs rules md
+- Enums LOGIC MUST use raw DB values snake case Display formatting ONLY in JSX separate props
+- Async UI MUST show loading state disable buttons spinners for all async ops
+- No Ad hoc Use centralized supabase rest client ts
+- See detail rules enum and types rules md
+- Toast Use useToast from repo ui NEVER use react hot toast directly
+- Errors All UI errors guard clauses MUST trigger showError toast
+- Providers Place at root layout only
+- See detail rules ui ux async rules md and detail rules toast notification rules md

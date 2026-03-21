@@ -1,0 +1,64 @@
+- Ikuti pola arsitektur yang sudah ada di repo
+- Pisahkan UI logika bisnis dan akses data
+- Fokuskan komponen pada satu tanggung jawab utama
+- Gunakan komposisi daripada inheritance untuk komponen
+- Gunakan penamaan yang jelas konsisten dan deskriptif
+- Hindari inline styles gunakan kelas utilitas Tailwind
+- Gunakan struktur proyek konsisten components services hooks types utils app
+- Verifikasi skema database sebelum menulis tipe atau query
+- Jaga query sederhana pecah join kompleks ke detail methods
+- Pastikan created by adalah UUID valid dari session user
+- Jika menggunakan new folder name set folder id null secara eksplisit
+- Jangan gunakan service role key di client
+- Gunakan API routes server side untuk operasi admin atau RLS bypass
+- Proteksi route dengan middleware redirect jika token tidak ada
+- Implement RBAC granular superadmin admin general admin branch
+- Gunakan React Query untuk fetch cache state server di seluruh app
+- Konfigurasi React Query keepPreviousData staleTime 5 menit refetchOnWindowFocus false retry 1
+- Invalidasi query yang tepat setelah mutasi berhasil
+- Gunakan isPending mutation atau isLoading query untuk mengontrol disable tombol dan teks status
+- Gunakan dual storage localStorage dan sessionStorage
+- Import helper dari repo core untuk konsistensi lintas modul
+- Implement logout yang membersihkan semua storage local dan session
+- Gunakan ToastProvider ToastViewport dan useToast dari repo ui untuk semua notifikasi
+- Provider harus dipasang sekali di root layout aplikasi agar tidak duplikat
+- Komponen hanya boleh memanggil useToast untuk menampilkan pesan jangan gunakan react hot toast atau provider lokal
+- Semua UI errors atau guard clauses harus trigger showError toast
+- Tampilkan pesan error ramah pengguna dengan konteks yang membantu
+- Sediakan loading error dan empty states yang jelas di UI
+- Tambahkan indikator loading yang jelas untuk setiap operasi async await di UI
+- Pada modal konfirmasi gunakan confirmDisabled dan ubah teks tombol menjadi status proses
+- Gunakan Next js Image untuk aset statis dengan unoptimized dan priority bila perlu
+- Gunakan dynamic import untuk komponen berat dengan ssr false
+- Gunakan useMemo useCallback untuk kalkulasi mahal dan handler
+- Selalu berikan key unik pada elemen hasil map
+- Validasi form dengan Yup berikan pesan kesalahan yang jelas dan lokal
+- UI UX gunakan glassmorphism dan gradients secara elegan tidak berlebihan
+- Responsif gunakan grid mobile first dan tipografi adaptif
+- Aksesibilitas tambahkan focus ring roles dan atribut aria yang tepat
+- Hindari kombinasi warna dengan kontras buruk ikuti palet brand di tailwind config
+- Animasi gunakan transisi halus terapkan stagger hindari bounce berlebihan
+- Konsisten gunakan spacing skala Tailwind
+- Hindari kelas Tailwind dinamis yang tidak terdeteksi tooling
+- Hindari impor seluruh library ikon impor hanya ikon yang diperlukan
+- Gunakan axiosInstance terpusat tambahkan Authorization Bearer otomatis via interceptor
+- Tangani error melalui interceptor sertakan logging dan refresh token bila perlu
+- Gunakan axiosInstance get post put delete hindari fetch mentah
+- Validasi payload terhadap skema sebelum dikirim
+- Selalu await promise dan tangani kedua cabang data error
+- Gunakan try catch untuk semua operasi async
+- Gunakan error boundaries untuk komponen yang berisiko crash
+- Logging gunakan struktur terarah sertakan konteks hindari spam log
+- Validasi environment variables di startup hentikan bila ada yang hilang
+- Jangan commit env gunakan env example dan variabel lingkungan
+- Jangan log data sensitif lindungi rahasia pada runtime
+- Validasi semua input di endpoint dan form pada client server
+- Uji skenario sukses dan error untuk setiap fitur
+- Uji interaksi pengguna fokus pada perilaku bukan detail implementasi
+- Sediakan checklist manual testing untuk flow inti auth CRUD UI states
+- Uji responsivitas di perangkat dan ukuran layar berbeda
+- Uji aksesibilitas dengan keyboard dan screen reader
+- Pantau performa saat testing dan catat temuan
+- Gunakan staging untuk uji sebelum production
+- Hindari try/catch bertingkat dan catch kosong; gunakan satu try/catch dengan penanganan jelas
+- Pastikan semua variabel, fungsi, dan import/export dideklarasikan secara lengkap; jangan ada yang missing atau undefined

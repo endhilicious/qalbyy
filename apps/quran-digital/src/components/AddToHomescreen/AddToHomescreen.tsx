@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
 import { Modal } from '@repo/ui';
+import Image from 'next/image';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -18,7 +19,9 @@ interface AddToHomescreenProps {
 }
 
 const SUPPRESS_KEY = 'a2hs-suppress-until';
-const SUPPRESS_MS = 5 * 60 * 1000; // 5 minutes
+const SUPPRESS_MS = 12 * 60 * 60 * 1000; // 12 hours
+const SESSION_START_KEY = 'a2hs-session-start';
+const USAGE_DELAY_MS = 5 * 60 * 1000; // 5 minutes usage delay
 
 const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -27,16 +30,18 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [usageDelayMet, setUsageDelayMet] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
-  const setSuppressFor5m = () => {
+  const setSuppressFor12h = () => {
     try {
-      sessionStorage.setItem(SUPPRESS_KEY, String(Date.now() + SUPPRESS_MS));
+      localStorage.setItem(SUPPRESS_KEY, String(Date.now() + SUPPRESS_MS));
     } catch {}
   };
 
   const isSuppressed = () => {
     try {
-      const until = sessionStorage.getItem(SUPPRESS_KEY);
+      const until = localStorage.getItem(SUPPRESS_KEY);
       return until ? parseInt(until, 10) > Date.now() : false;
     } catch {
       return false;
@@ -71,15 +76,29 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
     setIsIOS(checkIOS());
     setIsMobile(checkMobile());
 
+    // Track session usage time and set 5-minute delay before showing
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    try {
+      let start = Number(sessionStorage.getItem(SESSION_START_KEY));
+      if (!start || Number.isNaN(start)) {
+        start = Date.now();
+        sessionStorage.setItem(SESSION_START_KEY, String(start));
+      }
+      const elapsed = Date.now() - start;
+      const remaining = USAGE_DELAY_MS - elapsed;
+      if (remaining <= 0) {
+        setUsageDelayMet(true);
+      } else {
+        timeoutId = setTimeout(() => setUsageDelayMet(true), remaining);
+      }
+    } catch {
+      timeoutId = setTimeout(() => setUsageDelayMet(true), USAGE_DELAY_MS);
+    }
+
     // Listen for beforeinstallprompt event (Android/Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-
-      // Only show install prompt automatically if mobile, not installed, not iOS, and not suppressed
-      if (!checkStandalone() && !checkIOS() && checkMobile() && !isSuppressed()) {
-        setShowInstallPrompt(true);
-      }
     };
 
     // Listen for app installed event
@@ -87,7 +106,7 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
       setIsInstalled(true);
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
-      setSuppressFor5m(); // prevent re-showing the modal shortly after installation
+      setSuppressFor12h(); // prevent re-showing the modal for 12 hours after installation
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -96,8 +115,27 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
+
+  // Decide when to show the modal automatically:
+  // - Only on mobile, not standalone
+  // - Respect suppression period
+  // - After 5 minutes usage delay
+  // - iOS: show instructional modal
+  // - Android/Chrome: wait until beforeinstallprompt event is available
+  useEffect(() => {
+    if (!usageDelayMet) return;
+    if (isStandalone || !isMobile) return;
+    if (isSuppressed()) return;
+
+    if (isIOS) {
+      setShowInstallPrompt(true);
+    } else if (deferredPrompt) {
+      setShowInstallPrompt(true);
+    }
+  }, [usageDelayMet, isStandalone, isMobile, isIOS, deferredPrompt]);
 
   const handleInstallClick = async () => {
     // On iOS, respect suppression and only show instructions if not suppressed
@@ -118,7 +156,7 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
 
         setShowInstallPrompt(false);
         setDeferredPrompt(null);
-        setSuppressFor5m(); // clicking install should also suppress future modal for 5 minutes
+        setSuppressFor12h(); // clicking install should also suppress future modal for 12 hours
       } catch (error) {
         console.error('Error installing app:', error);
       }
@@ -127,7 +165,7 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
 
   const handleDismiss = () => {
     setShowInstallPrompt(false);
-    setSuppressFor5m(); // suppress modal for 5 minutes after dismiss
+    setSuppressFor12h(); // suppress modal for 12 hours after dismiss
   };
 
   // Don't render on desktop or if already in standalone mode
@@ -141,17 +179,17 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
       <button
         onClick={handleInstallClick}
         className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors hover:bg-green-50 text-gray-700 hover:text-green-700 ${className}`}
-        aria-label="Install Qalbyy App"
+        aria-label="Add Qalbyy to Homescreen"
       >
         <Download className="w-5 h-5" />
-        <span className="font-medium">Install App</span>
+        <span className="font-medium">Tambahkan ke layar utama</span>
       </button>
 
       {/* Install Prompt Modal using shared UI component */}
       <Modal
         isOpen={showInstallPrompt}
         onClose={handleDismiss}
-        title="Install Qalbyy"
+        title="Tambahkan ke layar utama"
         size="sm"
       >
         <div className="space-y-4">
@@ -168,43 +206,65 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
           </div>
 
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Smartphone className="w-8 h-8 text-green-600" />
+            <div className="mx-auto mb-4">
+              <div className="relative w-24 h-24 mx-auto">
+                <div className="absolute inset-0 rounded-full border-2 border-green-200 animate-pulse" style={{ animationDuration: '1.8s' }}></div>
+                <div className="absolute inset-2 rounded-full bg-gradient-to-br from-green-50 to-emerald-50 shadow-inner"></div>
+                <div className="relative flex items-center justify-center" style={{ width: '200px', top: '-79px', left: '-46px' }}>
+                  {!imgError ? (
+                    <Image
+                      // src="/qalbyy-with-background.png"
+                      src="/quran-in-phone.png"
+                      alt="Qalbyy App"
+                      width={200}
+                      height={200}
+                      className="p-2 object-contain"
+                      onError={() => setImgError(true)}
+                      unoptimized
+                      priority
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                      <Smartphone className="w-8 h-8 text-green-600" />
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             <p className="text-gray-600 text-sm leading-relaxed">
-              Install aplikasi Qalbyy untuk pengalaman yang lebih baik dan akses offline.
+              Tambahkan ke layar utama Qalbyy untuk pengalaman yang lebih baik dan akses offline.
             </p>
           </div>
 
           {isIOS ? (
             // iOS Instructions
-            <div className="bg-blue-50 rounded-lg p-4 space-y-3">
-              <h4 className="font-semibold text-blue-900 text-sm">Cara Install di iOS:</h4>
-              <ol className="text-xs text-blue-800 space-y-2 list-decimal list-inside">
+            <div className="bg-blue-50 rounded-xl p-4 space-y-3 border border-blue-100">
+              <h4 className="font-semibold text-blue-900 text-sm">Cara Tambahkan ke layar utama di iOS</h4>
+              <ol className="text-xs text-blue-800 space-y-2 list-decimal list-inside text-left">
                 <li>Tap tombol <strong>Share</strong> (kotak dengan panah ke atas) di Safari</li>
                 <li>Scroll ke bawah dan pilih <strong>"Add to Home Screen"</strong></li>
-                <li>Tap <strong>"Add"</strong> untuk menginstall aplikasi</li>
+                <li>Tap <strong>"Add"</strong> untuk menambahkan ke layar utama</li>
               </ol>
             </div>
           ) : (
             // Android/Chrome Install
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              {/* <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Ukuran aplikasi: ~2MB</span>
-              </div>
+              </div> */}
               
               <div className="flex space-x-3">
                 <button
                   onClick={handleDismiss}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
                 >
                   Nanti Saja
                 </button>
                 <button
                   onClick={handleInstallClick}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
                 >
-                  Install Sekarang
+                  Tambahkan
                 </button>
               </div>
             </div>

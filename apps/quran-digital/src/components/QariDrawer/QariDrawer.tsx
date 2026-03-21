@@ -92,7 +92,7 @@ const QariDrawer: React.FC<QariDrawerProps> = ({
           </div>
 
           {/* Content */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="bg-white flex-1 p-6 overflow-y-auto">
             <div className="space-y-6">
               
               {/* Qari Selection Dropdown */}
@@ -203,23 +203,6 @@ const QariDrawer: React.FC<QariDrawerProps> = ({
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Tips */}
-              <div className="space-y-4">
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-green-700 text-sm">
-                    <strong>Tips Qari:</strong> Pilih qari favorit untuk mendengarkan bacaan Al-Quran dengan suara yang paling nyaman.
-                  </p>
-                </div>
-                
-                {suratInfo && (
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-blue-700 text-sm">
-                      <strong>Tips Navigasi:</strong> Gunakan pilihan ayat untuk langsung menuju ayat tertentu tanpa perlu scroll panjang.
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           </div>

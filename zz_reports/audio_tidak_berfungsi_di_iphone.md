@@ -1,4 +1,5 @@
-'use client';
+dari code audio player dibawah ini. mana menurutmu yang bermasalah di ios browser ? saat ini kalau pakai android aman-aman saja, lancar audionya. tapi kalau pakai ios browser / iphone aksesnya itu, ada masalah ketika ganti surah, sangat sering kejadian audionya tidak bekerja dengan baik. bahkan error. saya mau ada cara / langkah preventif, kalau ada masalah itu lagi di iphone browser , harus di lakukan langkah cepat untuk memutar audionya. tolong bantu cari
+```'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Play, Pause, Volume2, VolumeX, RotateCcw, List } from 'lucide-react';
@@ -47,7 +48,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [showResetButton, setShowResetButton] = useState(false);
   
   // Use global audio context
   const { 
@@ -109,38 +109,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, [isIOS, audioUnlocked]);
 
-  const forceReloadAudio = useCallback((overrideUrl?: string) => {
-    const audio = audioRef.current;
-    const urlToUse = overrideUrl ?? currentAudioUrl;
-    if (!audio) return;
-    try {
-      setLoading(true);
-      setError(null);
-      audio.pause();
-      audio.removeAttribute('src');
-      audio.load();
-      setTimeout(() => {
-        const a = audioRef.current;
-        if (!a) return;
-        if (urlToUse) {
-          a.src = urlToUse;
-        }
-        a.load();
-        a.play()
-          .then(() => {
-            setCurrentPlaying(audioId);
-            setLoading(false);
-          })
-          .catch(() => {
-            setCurrentPlaying(null);
-            setLoading(false);
-            setError(isIOS ? 'Gagal memutar audio. Tap tombol play lagi.' : 'Gagal memutar audio. Periksa koneksi internet Anda.');
-          });
-      }, 100);
-    } catch {
-      setLoading(false);
-    }
-  }, [currentAudioUrl, audioId, isIOS, setCurrentPlaying]);
   // Register this audio element
   useEffect(() => {
     if (audioRef.current) {
@@ -513,7 +481,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       audioRef.current?.pause();
       setCurrentPlaying(null);
     }
-    const nextUrl = getBestAudioUrl(audioSources, qariId);
+    
     setSelectedQari(qariId);
     setCurrentTime(0);
     setDuration(0);
@@ -523,17 +491,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     
     // Auto-play if was playing before
     if (wasPlaying) {
-      if (isIOS) {
-        setTimeout(() => {
-          forceReloadAudio(nextUrl || undefined);
-        }, 120);
-      } else {
-        setTimeout(() => {
-          handlePlay();
-        }, 100);
-      }
+      setTimeout(() => {
+        handlePlay();
+      }, 100);
     }
-  }, [audioSources, forceReloadAudio, handlePlay, isIOS, isPlaying, onQariChange, setCurrentPlaying, selectedQari]);
+  }, [isPlaying, onQariChange, setCurrentPlaying, selectedQari]);
 
   const handleStartSequentialPlay = () => {
     // Disable replay when starting sequential play
@@ -545,17 +507,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     onStartSequentialPlay?.();
   };
 
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    if (loading && isIOS) {
-      timer = setTimeout(() => setShowResetButton(true), 5000);
-    } else {
-      setShowResetButton(false);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [loading, isIOS]);
   const formatTime = (time: number): string => {
     if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
@@ -684,14 +635,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
             <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
-        {showResetButton && isIOS && (
-          <button 
-            onClick={() => forceReloadAudio()}
-            className="mt-1 text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full border border-orange-200 self-center"
-          >
-            Audio macet? Tap untuk muat ulang (Khusus iPhone)
-          </button>
-        )}
       </div>
 
       {/* Clear Separator Between Full Audio and Per-Verse Mode */}
@@ -763,3 +706,111 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 };
 
 export default AudioPlayer;
+```
+
+
+---
+
+# JAWABAN AI AGENT
+Masalah yang Anda hadapi pada iOS (Safari/Chrome di iPhone) sangat umum terjadi karena kebijakan keamanan Apple yang sangat ketat terkait "User Gestures" dan manajemen memori pada elemen media.
+
+Berikut adalah analisis masalah dan solusi preventif agar audio kembali lancar saat ganti surah:
+
+## 1. Akar Masalah di iOS
+
+* **Strict User Gesture Policy:** iOS sering memblokir `.play()` jika dianggap tidak dipicu langsung oleh klik user. Saat Anda ganti surah, jika ada proses *asynchronous* (seperti fetching data atau nunggu `useEffect` URL berubah) sebelum memutar, iOS akan menganggap rantai "User Gesture" sudah putus.
+* **Media Stack Re-use:** iOS tidak suka jika satu elemen `<audio>` sering berganti `src`. Terkadang ia "stuck" pada status *loading* dari file sebelumnya.
+* **Audio Context Suspension:** Browser iOS sering menangguhkan (suspend) konteks audio jika tab sempat tidak aktif atau layar terkunci.
+
+---
+
+## 2. Langkah Preventif & Perbaikan Code
+
+Ada beberapa bagian di code Anda yang perlu diperkuat:
+
+### A. Gunakan "Pre-loading" dengan File Kosong (Silent Kick)
+Saat user menekan tombol "Ganti Surah" atau "Qari", segera panggil `.play()` **sebelum** URL baru benar-benar diproses. Ini untuk menjaga agar "izin" dari sistem operasi tetap terbuka.
+
+### B. Perbaikan Fungsi `handlePlay`
+Tambahkan logika `audio.load()` secara eksplisit dan penanganan error yang lebih agresif.
+
+```javascript
+// Tambahkan fungsi ini di dalam komponen Anda
+const forceReloadAudio = useCallback(() => {
+  if (audioRef.current) {
+    audioRef.current.pause();
+    audioRef.current.removeAttribute('src'); // Kosongkan src
+    audioRef.current.load(); // Paksa reset internal state
+    
+    // Masukkan kembali URL yang benar setelah delay singkat
+    setTimeout(() => {
+      if (audioRef.current && currentAudioUrl) {
+        audioRef.current.src = currentAudioUrl;
+        audioRef.current.load();
+        audioRef.current.play().catch(e => console.error("Retry failed", e));
+      }
+    }, 100);
+  }
+}, [currentAudioUrl]);
+```
+
+### C. Update pada `handleQariChange`
+Jangan hanya ganti state, tapi paksa re-inisialisasi untuk iOS:
+
+```javascript
+const handleQariChange = useCallback((qariId: string) => {
+  // ... (logic lama Anda)
+  
+  if (isIOS) {
+    // Paksa reload total untuk iOS saat ganti qari/surah
+    forceReloadAudio();
+  } else {
+    // Normal flow untuk Android/Web
+    setSelectedQari(qariId);
+  }
+}, [isIOS, forceReloadAudio]);
+```
+
+---
+
+## 3. Fitur "Emergency Fix" untuk User (Langkah Cepat)
+
+Jika audio macet di iPhone, user biasanya bingung. Tambahkan tombol **"Refresh Audio"** kecil yang muncul hanya jika terjadi error atau loading terlalu lama (> 5 detik).
+
+### Tambahkan State & Effect:
+```javascript
+const [showResetButton, setShowResetButton] = useState(false);
+
+useEffect(() => {
+  let timer: NodeJS.Timeout;
+  if (loading && isIOS) {
+    // Jika loading lebih dari 5 detik di iOS, tampilkan tombol emergency
+    timer = setTimeout(() => setShowResetButton(true), 5000);
+  } else {
+    setShowResetButton(false);
+  }
+  return () => clearTimeout(timer);
+}, [loading, isIOS]);
+```
+
+### Tambahkan UI (Taruh di atas/bawah Error Message):
+```jsx
+{showResetButton && (
+  <button 
+    onClick={forceReloadAudio}
+    className="mt-2 text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full border border-orange-200"
+  >
+    Audio macet? Tap untuk muat ulang (Khusus iPhone)
+  </button>
+)}
+```
+
+---
+
+## 4. Tips Tambahan untuk iOS
+
+1.  **`playsInline` & `preload`:** Anda sudah menggunakan `playsInline`. Namun, untuk `preload`, di iOS lebih aman menggunakan `auto` jika Anda ingin audio segera siap, atau `none` jika ingin hemat data. Namun, saat surah diganti, pastikan `audio.load()` dipanggil secara manual.
+2.  **Global Audio Context:** Karena Anda menggunakan `AudioContext` global, pastikan tidak ada dua elemen audio yang mencoba *play* bersamaan. iOS akan memblokir keduanya jika terjadi tabrakan. Gunakan `audioRef.current.pause()` secara eksplisit pada semua referensi sebelum memulai yang baru.
+3.  **Gunakan URL yang Stabil:** Pastikan `getBestAudioUrl` tidak menghasilkan URL yang sering berubah-ubah (redirect). iOS Safari sangat sensitif terhadap *redirect* pada streaming audio.
+
+**Apakah Anda ingin saya buatkan satu blok fungsi `forceReloadAudio` yang lengkap untuk diintegrasikan ke dalam file tersebut?**

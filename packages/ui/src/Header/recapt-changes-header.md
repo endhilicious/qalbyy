@@ -25,6 +25,21 @@
 - Alasan: Menghindari perubahan tak terdokumentasi pada komponen global.
 - Dampak: Non-fungsional.
 
+
+## Perubahan 3 — Penghapusan Fitur Notifikasi (Header)
+- Tanggal/Waktu: 2026-03-21 (UTC+7)
+- Ringkasan: Menghapus tombol notifikasi di Header dan komponen `NotificationDrawer` yang muncul saat tombol diklik.
+- Lokasi Kode:
+  - `Header.tsx`: Menghapus blok tombol notifikasi (sekitar L248–L267), state `isNotificationDrawerOpen`, import `NotificationDrawer`, import ikon `Bell`, variabel `unreadNotifications`, serta JSX pemanggilan `NotificationDrawer`.
+  - `NotificationDrawer.tsx`: Dihapus total dari folder.
+- Alasan: Fitur notifikasi tidak diperlukan; menghindari UI dan state yang tidak digunakan.
+- Dampak:
+  - API `HeaderProps` tetap kompatibel, tetapi properti terkait notifikasi tidak lagi digunakan di implementasi.
+  - Storybook tetap berfungsi; bagian notifikasi tidak lagi ditampilkan.
+- Verifikasi:
+  - Build dan lint package `@repo/ui` tanpa error/peringatan.
+  - Menggunakan Header di aplikasi konsumen tetap berjalan normal tanpa notifikasi.
+
 ## Perubahan 2 — Penambahan Reminder di Header File (NotificationDrawer.tsx)
 - Tanggal/Waktu: 2025-10-18 (UTC+7)
 - Ringkasan: Menambahkan komentar pengingat tegas setelah `'use client'`.

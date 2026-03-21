@@ -72,7 +72,7 @@ const SurahNavigation: React.FC<SurahNavigationProps> = ({
         {/* Current Surah Info */}
         <div className="px-3 py-1 text-center">
           <p className="text-xs text-gray-500">Surah</p>
-          <p className="text-sm font-bold text-gray-900">{currentSurahId} / {TOTAL_SURAHS}</p>
+          <p className="text-sm font-bold text-gray-900 w-16">{currentSurahId} / {TOTAL_SURAHS}</p>
         </div>
 
         {/* Next Button */}

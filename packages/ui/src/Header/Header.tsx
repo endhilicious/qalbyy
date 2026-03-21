@@ -2,8 +2,7 @@
 // PENTING: Komponen reusable ini digunakan luas di seluruh modul. Setiap perubahan WAJIB direkap di file 'recapt-changes-header.md' pada folder komponen ini (packages/ui/src/Header). Sertakan tanggal, lokasi baris/kode, dan alasan perubahan. Lakukan review ekstra hati-hati sebelum merge.
 
 import React, { useState, useRef, useEffect } from "react";
-import { LucideIcon, Bell, User, Settings, LogOut, ChevronDown } from "lucide-react";
-import NotificationDrawer from "./NotificationDrawer";
+import { User, Settings, LogOut, ChevronDown } from "lucide-react";
 
 export interface HeaderUser {
   name: string;
@@ -72,27 +71,26 @@ export function Header({
   user,
   appTitle = "JILC",
   logo,
-  notifications = [],
-  showNotifications = true,
+  // notifications = [],
+  // showNotifications = true,
   showUserMenu = true,
   onMobileMenuToggle,
   showMobileMenuToggle = true,
-  onCloseSidebar,
+  // onCloseSidebar,
   onLogout,
   onSettings,
   onProfile,
-  onNotificationClick,
-  onMarkNotificationRead,
-  onMarkAllNotificationsRead,
-  onDeleteNotification,
-  onClearAllNotifications,
+  // onNotificationClick,
+  // onMarkNotificationRead,
+  // onMarkAllNotificationsRead,
+  // onDeleteNotification,
+  // onClearAllNotifications,
   customActions,
   className = "",
   variant = "default",
   sidebarCollapsed = false,
 }: HeaderProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
@@ -127,7 +125,7 @@ export function Header({
     return () => window.removeEventListener('resize', updateHeaderHeightVar);
   }, [customActions, variant, sidebarCollapsed]);
 
-  const unreadNotifications = notifications.filter(n => !n.read);
+  // const unreadNotifications = notifications.filter(n => !n.read);
 
   const renderLogo = () => {
     if (typeof logo === "string") {
@@ -245,26 +243,6 @@ export function Header({
             {/* Custom actions */}
             {customActions}
 
-            {/* Notifications */}
-            {showNotifications && (
-              <button
-                onClick={() => {
-                  setIsNotificationDrawerOpen(true);
-                  // Auto-close sidebar when notification drawer opens
-                  onCloseSidebar?.();
-                }}
-                className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                aria-label="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadNotifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {unreadNotifications.length > 9 ? "9+" : unreadNotifications.length}
-                  </span>
-                )}
-              </button>
-            )}
-
             {/* User menu */}
             {showUserMenu && user && (
               <div className="relative" ref={userMenuRef}>
@@ -291,16 +269,6 @@ export function Header({
         </div>
       </div>
 
-      {/* Notification Drawer */}
-      <NotificationDrawer
-        isOpen={isNotificationDrawerOpen}
-        onClose={() => setIsNotificationDrawerOpen(false)}
-        notifications={notifications}
-        onMarkAsRead={(id) => onMarkNotificationRead?.(id)}
-        onMarkAllAsRead={() => onMarkAllNotificationsRead?.()}
-        onDeleteNotification={(id) => onDeleteNotification?.(id)}
-        onClearAll={() => onClearAllNotifications?.()}
-      />
     </header>
   );
 }
