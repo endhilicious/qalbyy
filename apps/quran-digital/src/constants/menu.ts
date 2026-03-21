@@ -39,7 +39,7 @@ export const MENU_ITEMS: MenuItem[] = [
     description: 'Paket perjalanan ibadah terpercaya',
     icon: Globe,
     href: '/haji-umroh',
-    isEnabled: true,
+    isEnabled: false,
     bgGradient: 'from-green-500 to-green-600',
     iconBg: 'bg-green-100 text-green-700',
   },
@@ -104,3 +104,15 @@ export const MENU_ITEMS: MenuItem[] = [
     iconBg: 'bg-gray-100 text-gray-500',
   },
 ];
+
+/**
+ * Menghasilkan daftar menu yang terlihat berdasarkan lingkungan.
+ * - Di localhost: semua item ditampilkan (yang isEnabled=false akan ditandai "coming soon" oleh UI).
+ * - Di environment produksi: hanya item dengan isEnabled=true yang ditampilkan.
+ */
+export function getVisibleMenuItems(isLocalhost: boolean): MenuItem[] {
+  if (isLocalhost) {
+    return MENU_ITEMS;
+  }
+  return MENU_ITEMS.filter(item => item.isEnabled);
+}

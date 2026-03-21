@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Home } from 'lucide-react';
 import { Layout } from '@repo/ui';
 import type { SidebarNavigationItem } from '@repo/ui';
-import { MENU_ITEMS } from '#/constants/menu';
+import { MENU_ITEMS, getVisibleMenuItems } from '#/constants/menu';
 import AddToHomescreen from '#/components/AddToHomescreen';
 import SurahSelector from '#/components/SurahSelector';
 
@@ -29,6 +29,12 @@ const LayoutWrapper: React.FC<LayoutWrapperProps> = ({
   const router = useRouter();
   const pathname = usePathname();
 
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+  );
+  const visibleMenu = getVisibleMenuItems(isLocalhost);
+
   const navigationItems: SidebarNavigationItem[] = [
     {
       id: 'home',
@@ -37,7 +43,7 @@ const LayoutWrapper: React.FC<LayoutWrapperProps> = ({
       icon: Home,
       description: 'Halaman utama aplikasi',
     },
-    ...MENU_ITEMS.map((item) => ({
+    ...visibleMenu.map((item) => ({
       id: item.id,
       label: item.title,
       href: item.href,
