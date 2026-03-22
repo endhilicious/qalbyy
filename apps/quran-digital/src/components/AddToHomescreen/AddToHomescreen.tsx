@@ -176,14 +176,14 @@ const AddToHomescreen: React.FC<AddToHomescreenProps> = ({ className = '' }) => 
   return (
     <>
       {/* Install Button (mobile only) */}
-      <button
+      {/* <button
         onClick={handleInstallClick}
         className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors hover:bg-green-50 text-gray-700 hover:text-green-700 ${className}`}
         aria-label="Add Qalbyy to Homescreen"
       >
         <Download className="w-5 h-5" />
         <span className="font-medium">Tambahkan ke layar utama</span>
-      </button>
+      </button> */}
 
       {/* Install Prompt Modal using shared UI component */}
       <Modal

@@ -1,13 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Layout from '#/components/Layout';
 import MenuCard from '#/components/MenuCard';
-import { MENU_ITEMS } from '#/constants/menu';
+import { getVisibleMenuItems } from '#/constants/menu';
 import AppLoading from '#/components/AppLoading';
 
 const HomeScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [isLocalhost, setIsLocalhost] = useState(false);
+  const visibleMenu = getVisibleMenuItems(isLocalhost);
+
+  useEffect(() => {
+    try {
+      const host = window.location.hostname;
+      setIsLocalhost(host === 'localhost' || host === '127.0.0.1');
+    } catch {
+      setIsLocalhost(false);
+    }
+  }, []);
 
   useEffect(() => {
     // Simulate loading tanpa progress bar
@@ -57,10 +67,11 @@ const HomeScreen: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {MENU_ITEMS.map((item) => (
+          {visibleMenu.map((item) => (
             <MenuCard key={item.id} item={item} />
           ))}
         </div>
+        
         
         {/* Footer Info */}
         <div className="mt-8 p-6 bg-white rounded-xl border border-gray-200 text-center">

@@ -290,7 +290,9 @@ const AyatAudioPlayer: React.FC<AyatAudioPlayerProps> = ({
         src: audioRef.current.src
       });
       
-      if (readyState === 0) {
+      if (isIOS) {
+        audioRef.current.load();
+      } else if (readyState === 0) {
         console.log('📥 [AyatAudioPlayer] Loading audio for Ayat', ayatNumber);
         audioRef.current.load();
         
@@ -337,6 +339,23 @@ const AyatAudioPlayer: React.FC<AyatAudioPlayerProps> = ({
         isIOS,
         timestamp: new Date().toISOString()
       });
+
+      if (isIOS && audioRef.current && currentAudioUrl) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.removeAttribute('src');
+          audioRef.current.load();
+          audioRef.current.src = currentAudioUrl;
+          audioRef.current.load();
+          setCurrentPlaying(audioId);
+          await audioRef.current.play();
+          setError(null);
+          setLoading(false);
+          return;
+        } catch {
+          // fallthrough
+        }
+      }
       
       const errorMsg = isIOS 
         ? 'Gagal memutar. Coba lagi.' 

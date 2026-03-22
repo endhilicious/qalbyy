@@ -116,3 +116,57 @@ export function getVisibleMenuItems(isLocalhost: boolean): MenuItem[] {
   }
   return MENU_ITEMS.filter(item => item.isEnabled);
 }
+
+/**
+ * Normalisasi pathname/href agar konsisten untuk penentuan menu aktif.
+ * - Menghapus query/hash jika ada.
+ * - Menghapus trailing slash (kecuali root "/").
+ */
+export function normalizeMenuPath(path: string): string {
+  const raw = (path || '/').split('?')[0]?.split('#')[0] ?? '/';
+  const withLeadingSlash = raw.startsWith('/') ? raw : `/${raw}`;
+  const trimmed = withLeadingSlash.replace(/\/+$/, '');
+  return trimmed === '' ? '/' : trimmed;
+}
+
+/**
+ * Menentukan apakah sebuah href menu dianggap aktif untuk pathname tertentu.
+ * Cocok untuk:
+ * - Trailing slash: "/alquran/" vs "/alquran"
+ * - Sub-route: "/alquran/1" tetap mengaktifkan "/alquran"
+ */
+export function isMenuHrefActive(pathname: string, itemHref: string): boolean {
+  const current = normalizeMenuPath(pathname);
+  const href = normalizeMenuPath(itemHref);
+
+  if (href === '/') return current === '/';
+  return current === href || current.startsWith(`${href}/`);
+}
+
+/**
+ * Menghasilkan href menu paling relevan (longest prefix match) untuk dijadikan activePath.
+ * Return null jika tidak ada yang cocok.
+ */
+export function getActiveMenuHref(
+  pathname: string,
+  menuItems: ReadonlyArray<Pick<MenuItem, 'href'>> = MENU_ITEMS
+): string | null {
+  const current = normalizeMenuPath(pathname);
+  if (current === '/') return null;
+
+  let bestHref: string | null = null;
+  let bestLen = -1;
+
+  for (const item of menuItems) {
+    if (!item?.href) continue;
+    if (!isMenuHrefActive(current, item.href)) continue;
+
+    const normalizedHref = normalizeMenuPath(item.href);
+    if (normalizedHref.length > bestLen) {
+      bestLen = normalizedHref.length;
+      bestHref = normalizedHref;
+    }
+  }
+
+  return bestHref;
+}

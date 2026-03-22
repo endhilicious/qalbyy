@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import SuratCard from '#/components/SuratCard';
-import LoadingSpinner from '#/components/LoadingSpinner';
+import AppLoading from '#/components/AppLoading';
 import { fetchSuratList } from '#/utils/api';
 import type { Surat } from '#/types/alquran';
 
@@ -29,11 +29,7 @@ const AlquranScreen: React.FC = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto flex justify-center items-center py-16">
-        <LoadingSpinner size="lg" text="Memuat daftar surat Al-Quran..." />
-      </div>
-    );
+    return <AppLoading isLoading={true} message="Memuat daftar surat Al-Quran..." />;
   }
 
   if (error) {

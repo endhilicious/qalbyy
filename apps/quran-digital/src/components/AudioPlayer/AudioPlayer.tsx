@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Play, Pause, Volume2, VolumeX, RotateCcw, List } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, RotateCcw } from 'lucide-react';
 import { getBestAudioUrl, getAudioLoadingStrategy } from '#/utils/audioUtils';
 import { useAudio } from '#/contexts/AudioContext';
-import SearchableDropdown, { DropdownItem } from '#/components/SearchableDropdown';
+import SearchableDropdown from '#/components/SearchableDropdown';
+import { useToast } from '@repo/ui';
 
 interface AudioPlayerProps {
   audioSources: Record<string, string>;
@@ -48,6 +49,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showResetButton, setShowResetButton] = useState(false);
+  const { showInfo } = useToast();
+  const hasShownDeviceToastRef = useRef(false);
   
   // Use global audio context
   const { 
@@ -88,6 +91,13 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     setIsIOS(isIOSDevice);
   }, []);
 
+  useEffect(() => {
+    if (!isIOS) return;
+    if (hasShownDeviceToastRef.current) return;
+    hasShownDeviceToastRef.current = true;
+    showInfo('Anda menggunakan iPhone/iOS. Jika audio macet, gunakan tombol "Audio macet? Tap untuk muat ulang".');
+  }, [isIOS, showInfo]);
+
   // iOS audio unlock function
   const unlockAudioiOS = useCallback(async () => {
     if (!isIOS || audioUnlocked || !audioRef.current) return true;
@@ -109,38 +119,59 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, [isIOS, audioUnlocked]);
 
-  const forceReloadAudio = useCallback((overrideUrl?: string) => {
-    const audio = audioRef.current;
-    const urlToUse = overrideUrl ?? currentAudioUrl;
-    if (!audio) return;
+  const forceReloadAudio = useCallback(
+    async (overrideUrl?: string): Promise<boolean> => {
+      const audio = audioRef.current;
+      const urlToUse = overrideUrl ?? currentAudioUrl;
+      if (!audio) return false;
+
+      try {
+        setLoading(true);
+        setError(null);
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+
+        if (urlToUse) {
+          audio.src = urlToUse;
+        }
+        audio.load();
+
+        setCurrentPlaying(audioId);
+        await audio.play();
+        setLoading(false);
+        return true;
+      } catch {
+        setCurrentPlaying(null);
+        setLoading(false);
+        setError(isIOS ? 'Gagal memutar audio. Tap tombol play lagi.' : 'Gagal memutar audio. Periksa koneksi internet Anda.');
+        return false;
+      }
+    },
+    [audioId, currentAudioUrl, isIOS, setCurrentPlaying]
+  );
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (!isIOS) return;
+
     try {
-      setLoading(true);
-      setError(null);
+      const audio = audioRef.current;
       audio.pause();
+      audio.currentTime = 0;
       audio.removeAttribute('src');
       audio.load();
-      setTimeout(() => {
-        const a = audioRef.current;
-        if (!a) return;
-        if (urlToUse) {
-          a.src = urlToUse;
-        }
-        a.load();
-        a.play()
-          .then(() => {
-            setCurrentPlaying(audioId);
-            setLoading(false);
-          })
-          .catch(() => {
-            setCurrentPlaying(null);
-            setLoading(false);
-            setError(isIOS ? 'Gagal memutar audio. Tap tombol play lagi.' : 'Gagal memutar audio. Periksa koneksi internet Anda.');
-          });
-      }, 100);
+      if (currentAudioUrl) {
+        audio.src = currentAudioUrl;
+      }
+      audio.load();
+      setCurrentTime(0);
+      setDuration(0);
+      setCurrentPlaying(null);
     } catch {
-      setLoading(false);
+      // ignore
     }
-  }, [currentAudioUrl, audioId, isIOS, setCurrentPlaying]);
+  }, [currentAudioUrl, isIOS, setCurrentPlaying]);
   // Register this audio element
   useEffect(() => {
     if (audioRef.current) {
@@ -420,7 +451,12 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         duration: audioRef.current.duration
       });
       
-      if (readyState === 0) {
+      if (isIOS) {
+        if (audioRef.current.src !== currentAudioUrl) {
+          audioRef.current.src = currentAudioUrl;
+        }
+        audioRef.current.load();
+      } else if (readyState === 0) {
         console.log('📥 [AudioPlayer] Audio not loaded, calling load()...');
         audioRef.current.load();
         
@@ -471,14 +507,19 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         timestamp: new Date().toISOString()
       });
       
-      const errorMsg = isIOS 
-        ? 'Gagal memutar audio. Pastikan tidak ada audio lain yang sedang berjalan.' 
+      if (isIOS) {
+        const recovered = await forceReloadAudio(currentAudioUrl || undefined);
+        if (recovered) return;
+      }
+
+      const errorMsg = isIOS
+        ? 'Gagal memutar audio. Pastikan tidak ada audio lain yang sedang berjalan.'
         : 'Gagal memutar audio. Periksa koneksi internet Anda.';
       setError(errorMsg);
       setCurrentPlaying(null);
       setLoading(false);
     }
-  }, [currentAudioUrl, selectedQari, isPlaying, loading, isIOS, audioUnlocked, unlockAudioiOS, setCurrentPlaying]);
+  }, [currentAudioUrl, selectedQari, isPlaying, loading, isIOS, audioUnlocked, unlockAudioiOS, setCurrentPlaying, forceReloadAudio]);
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!audioRef.current) return;
@@ -524,9 +565,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     // Auto-play if was playing before
     if (wasPlaying) {
       if (isIOS) {
-        setTimeout(() => {
-          forceReloadAudio(nextUrl || undefined);
-        }, 120);
+        void forceReloadAudio(nextUrl || undefined);
       } else {
         setTimeout(() => {
           handlePlay();
@@ -686,7 +725,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         )}
         {showResetButton && isIOS && (
           <button 
-            onClick={() => forceReloadAudio()}
+            onClick={() => void forceReloadAudio()}
             className="mt-1 text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full border border-orange-200 self-center"
           >
             Audio macet? Tap untuk muat ulang (Khusus iPhone)

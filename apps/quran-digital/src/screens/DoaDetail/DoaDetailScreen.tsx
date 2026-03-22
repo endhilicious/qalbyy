@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import LoadingSpinner from '#/components/LoadingSpinner';
+import AppLoading from '#/components/AppLoading';
 import { fetchDoaDetail } from '#/utils/api';
 import type { Doa } from '#/types/doa';
 import { BookOpen, Copy, Check } from 'lucide-react';
@@ -54,11 +54,7 @@ const DoaDetailScreen: React.FC<DoaDetailScreenProps> = ({ doaId }) => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-16">
-        <LoadingSpinner size="lg" text="Memuat detail doa..." />
-      </div>
-    );
+    return <AppLoading isLoading={true} message="Memuat detail doa..." />;
   }
 
   if (error || !doaData) {

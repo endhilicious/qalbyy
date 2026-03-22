@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import DoaCard from '#/components/DoaCard';
-import LoadingSpinner from '#/components/LoadingSpinner';
+import AppLoading from '#/components/AppLoading';
 import { fetchDoaList } from '#/utils/api';
 import type { Doa } from '#/types/doa';
 
@@ -29,11 +29,7 @@ const DoaScreen: React.FC = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-16">
-        <LoadingSpinner size="lg" text="Memuat daftar doa harian..." />
-      </div>
-    );
+    return <AppLoading isLoading={true} message="Memuat daftar doa harian..." />;
   }
 
   if (error) {

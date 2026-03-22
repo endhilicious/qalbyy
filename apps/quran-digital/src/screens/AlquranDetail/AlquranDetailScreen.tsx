@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import LoadingSpinner from '#/components/LoadingSpinner';
+import AppLoading from '#/components/AppLoading';
 import AudioPlayer, { AyatAudioPlayer } from '#/components/AudioPlayer';
 import FloatingActionButtons from '#/components/FloatingActionButtons';
 import QariDrawer from '#/components/QariDrawer';
@@ -171,6 +171,12 @@ const AlquranDetailContent: React.FC<AlquranDetailScreenProps> = ({ suratId }) =
       if (currentIndex < playlist.length) {
           // Navigate to next ayat
           const nextAyatNumber = playlist[currentIndex];
+          if (typeof nextAyatNumber !== 'number') {
+            setIsSequentialPlaying(false);
+            setOnSequentialNext(null);
+            setCurrentSequentialIndex(0);
+            return;
+          }
           setCurrentSequentialIndex(currentIndex);
           handleAyatNavigation(nextAyatNumber, true); // Force scroll for sequential
         
@@ -224,11 +230,7 @@ const AlquranDetailContent: React.FC<AlquranDetailScreenProps> = ({ suratId }) =
   }, [suratData, setIsReplayEnabled, setSequentialPlaylist, setCurrentSequentialIndex, setIsSequentialPlaying, setOnSequentialNext, handleAyatNavigation]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-16">
-        <LoadingSpinner size="lg" text="Memuat ayat-ayat Al-Quran..." />
-      </div>
-    );
+    return <AppLoading isLoading={true} message="Memuat ayat-ayat Al-Quran..." />;
   }
 
   if (error || !suratData) {

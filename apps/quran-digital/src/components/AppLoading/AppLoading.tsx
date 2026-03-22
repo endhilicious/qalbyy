@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import PremiumLoading from '../PremiumLoading/PremiumLoading';
+import React from 'react';
+import { PremiumLoading } from '@repo/ui';
 
 interface AppLoadingProps {
   /** Whether to show loading */
@@ -35,10 +35,11 @@ export function AppLoading({
       logo="/Qalbyy-logo-black.png"
       logoAlt="Qalbyy"
       primaryColor="green"
-      secondaryColor="emerald"
       size="lg"
       fullscreen={true}
-      showProgress={false}
+      showProgress={showProgress}
+      progress={progress}
+      brandName="Qalbyy"
     />
   );
 }

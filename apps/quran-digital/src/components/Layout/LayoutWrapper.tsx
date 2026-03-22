@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Home } from 'lucide-react';
-import { Layout } from '@repo/ui';
+import { Layout, ToastProvider, ToastViewport } from '@repo/ui';
 import type { SidebarNavigationItem } from '@repo/ui';
-import { MENU_ITEMS, getVisibleMenuItems } from '#/constants/menu';
+import { getActiveMenuHref, getVisibleMenuItems, normalizeMenuPath } from '#/constants/menu';
 import AddToHomescreen from '#/components/AddToHomescreen';
 import SurahSelector from '#/components/SurahSelector';
 
@@ -29,10 +29,16 @@ const LayoutWrapper: React.FC<LayoutWrapperProps> = ({
   const router = useRouter();
   const pathname = usePathname();
 
-  const isLocalhost = typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-  );
+  const [isLocalhost, setIsLocalhost] = useState(false);
+
+  useEffect(() => {
+    try {
+      const host = window.location.hostname;
+      setIsLocalhost(host === 'localhost' || host === '127.0.0.1');
+    } catch {
+      setIsLocalhost(false);
+    }
+  }, []);
   const visibleMenu = getVisibleMenuItems(isLocalhost);
 
   const navigationItems: SidebarNavigationItem[] = [
@@ -53,6 +59,12 @@ const LayoutWrapper: React.FC<LayoutWrapperProps> = ({
       comingSoon: !item.isEnabled,
     })),
   ];
+
+  const activePath = useMemo(() => {
+    const normalizedPathname = normalizeMenuPath(pathname);
+    if (normalizedPathname === '/') return '/';
+    return getActiveMenuHref(normalizedPathname) ?? normalizedPathname;
+  }, [pathname]);
 
   const headerCustomActions = (
     <>
@@ -75,41 +87,44 @@ const LayoutWrapper: React.FC<LayoutWrapperProps> = ({
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-green-50/30 to-gray-50 ${className}`}>
-      <Layout
-        showHeader={!!showNavbar}
-        showSidebar={!!showSidebar}
-        header={{
-          appTitle: 'Qalbyy',
-          logo: (
-            <img
-              src="/Qalbyy-logo-black.png"
-              alt="Qalbyy Logo"
-              className="h-7 w-7 sm:h-8 sm:w-8 object-contain"
-            />
-          ),
-          customActions: headerCustomActions,
-        }}
-        sidebar={{
-          appTitle: 'Qalbyy',
-          logo: '/Qalbyy-logo-white.png',
-          navigationItems,
-          activePath: pathname,
-          onNavigationClick: (item) => {
-            if (item.href) router.push(item.href);
-          },
-          footerContent: sidebarFooter,
-        }}
-        onMobileSidebarChange={(open) => {
-          // Lock body scroll when mobile sidebar (drawer) is open
-          if (typeof document !== 'undefined') {
-            document.body.style.overflow = open ? 'hidden' : 'unset';
-          }
-        }}
-      >
-        {children}
-        {/* Global install prompt trigger inside layout to ensure backdrop is correct */}
-        <AddToHomescreen />
-      </Layout>
+      <ToastProvider>
+        <Layout
+          showHeader={!!showNavbar}
+          showSidebar={!!showSidebar}
+          header={{
+            appTitle: 'Qalbyy',
+            logo: (
+              <img
+                src="/Qalbyy-logo-black.png"
+                alt="Qalbyy Logo"
+                className="h-7 w-7 sm:h-8 sm:w-8 object-contain"
+              />
+            ),
+            customActions: headerCustomActions,
+          }}
+          sidebar={{
+            appTitle: 'Qalbyy',
+            logo: '/Qalbyy-logo-white.png',
+            navigationItems,
+            activePath,
+            onNavigationClick: (item) => {
+              if (item.href) router.push(item.href);
+            },
+            footerContent: sidebarFooter,
+          }}
+          onMobileSidebarChange={(open) => {
+            // Lock body scroll when mobile sidebar (drawer) is open
+            if (typeof document !== 'undefined') {
+              document.body.style.overflow = open ? 'hidden' : 'unset';
+            }
+          }}
+        >
+          {children}
+          {/* Global install prompt trigger inside layout to ensure backdrop is correct */}
+          <AddToHomescreen />
+        </Layout>
+        <ToastViewport />
+      </ToastProvider>
     </div>
   );
 };

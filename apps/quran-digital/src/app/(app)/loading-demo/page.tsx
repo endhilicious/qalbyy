@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import PremiumLoading from '../../../components/PremiumLoading/PremiumLoading';
+import { PremiumLoading } from '@repo/ui';
 
 export default function LoadingDemoPage() {
   const [isLoading, setIsLoading] = useState(false);

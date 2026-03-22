@@ -218,7 +218,7 @@ export function PremiumLoading({
       
       {/* Loading Text */}
       <div className="text-center space-y-2">
-        <p className={`${textSizeClasses[size]} font-semibold bg-gradient-to-r ${colors.text} ${colors.textSecondary} bg-clip-text text-transparent`}>
+        <p className={`${textSizeClasses[size]} font-semibold bg-clip-text text-black text-green-600`}>
           {message}
         </p>
         <p className="text-sm text-gray-500">
