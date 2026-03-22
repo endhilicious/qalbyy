@@ -49,13 +49,16 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showResetButton, setShowResetButton] = useState(false);
-  const { showInfo } = useToast();
+  const { showInfo, showError } = useToast();
   const hasShownDeviceToastRef = useRef(false);
+  const reloadAttemptRef = useRef(0);
+  const hasShownReloadErrorToastRef = useRef(false);
   
   // Use global audio context
   const { 
     currentPlayingId, 
     setCurrentPlaying, 
+    stopAllAudio,
     audioRefs, 
     isReplayEnabled, 
     replayTimeoutRefs,
@@ -120,35 +123,73 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   }, [isIOS, audioUnlocked]);
 
   const forceReloadAudio = useCallback(
-    async (overrideUrl?: string): Promise<boolean> => {
+    async (overrideUrl?: string, options?: { bustCache?: boolean }): Promise<boolean> => {
       const audio = audioRef.current;
-      const urlToUse = overrideUrl ?? currentAudioUrl;
+      const baseUrlToUse = overrideUrl ?? currentAudioUrl;
       if (!audio) return false;
+      if (!baseUrlToUse) return false;
+
+      const bustCache = options?.bustCache ?? false;
+      const urlToUse = (() => {
+        if (!isIOS || !bustCache) return baseUrlToUse;
+        try {
+          const u = new URL(baseUrlToUse);
+          reloadAttemptRef.current += 1;
+          u.searchParams.set('__qalbyy_audio_reload', `${Date.now()}-${reloadAttemptRef.current}`);
+          return u.toString();
+        } catch {
+          reloadAttemptRef.current += 1;
+          const joiner = baseUrlToUse.includes('?') ? '&' : '?';
+          return `${baseUrlToUse}${joiner}__qalbyy_audio_reload=${Date.now()}-${reloadAttemptRef.current}`;
+        }
+      })();
 
       try {
+        if (isIOS) {
+          const unlocked = await unlockAudioiOS();
+          if (!unlocked) {
+            setError('Tap tombol play sekali lagi untuk memulai audio');
+            return false;
+          }
+        }
+
+        stopAllAudio();
         setLoading(true);
         setError(null);
+        hasShownReloadErrorToastRef.current = false;
+
         audio.pause();
+        audio.currentTime = 0;
         audio.removeAttribute('src');
+        audio.preload = isIOS ? 'auto' : 'metadata';
         audio.load();
 
-        if (urlToUse) {
-          audio.src = urlToUse;
-        }
+        audio.src = urlToUse;
         audio.load();
 
         setCurrentPlaying(audioId);
-        await audio.play();
+        await Promise.race([
+          audio.play(),
+          new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('play-timeout')), 8000);
+          }),
+        ]);
+
         setLoading(false);
         return true;
-      } catch {
+      } catch (e) {
+        const isTimeout = e instanceof Error && e.message === 'play-timeout';
         setCurrentPlaying(null);
         setLoading(false);
-        setError(isIOS ? 'Gagal memutar audio. Tap tombol play lagi.' : 'Gagal memutar audio. Periksa koneksi internet Anda.');
+        setError(isTimeout ? 'Audio macet saat memuat. Coba muat ulang atau ganti qari.' : (isIOS ? 'Gagal memutar audio. Tap tombol play lagi.' : 'Gagal memutar audio. Periksa koneksi internet Anda.'));
+        if (isIOS && !hasShownReloadErrorToastRef.current) {
+          hasShownReloadErrorToastRef.current = true;
+          showError('Audio iPhone masih macet. Coba muat ulang sekali lagi, ganti qari, atau gunakan Mode Per Ayat.');
+        }
         return false;
       }
     },
-    [audioId, currentAudioUrl, isIOS, setCurrentPlaying]
+    [audioId, currentAudioUrl, isIOS, setCurrentPlaying, showError, stopAllAudio, unlockAudioiOS]
   );
 
   useEffect(() => {
@@ -508,7 +549,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       });
       
       if (isIOS) {
-        const recovered = await forceReloadAudio(currentAudioUrl || undefined);
+        const recovered = await forceReloadAudio(currentAudioUrl || undefined, { bustCache: true });
         if (recovered) return;
       }
 
@@ -725,10 +766,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         )}
         {showResetButton && isIOS && (
           <button 
-            onClick={() => void forceReloadAudio()}
-            className="mt-1 text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full border border-orange-200 self-center"
+            onClick={() => void forceReloadAudio(undefined, { bustCache: true })}
+            disabled={loading}
+            className="mt-1 text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full border border-orange-200 self-center disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Audio macet? Tap untuk muat ulang (Khusus iPhone)
+            {loading ? 'Mencoba muat ulang audio...' : 'Audio macet? Tap untuk muat ulang (Khusus iPhone)'}
           </button>
         )}
       </div>
